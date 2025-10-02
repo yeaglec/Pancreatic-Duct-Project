@@ -34,7 +34,7 @@ ARCH := native # best auto-tuning
 # ARCH := nocona #64-bit pentium 4 or later 
 
 # CFLAGS := -march=$(ARCH) -Ofast -s -fomit-frame-pointer -mfpmath=both -fopenmp -m64 -std=c++11
-CFLAGS := -march=$(ARCH) -O3 -fomit-frame-pointer -mfpmath=both -fopenmp -m64 -std=c++17
+CFLAGS := -march=$(ARCH) -O3 -fomit-frame-pointer -mfpmath=both -fopenmp -m64 -std=c++11
 
 ifeq ($(OS),Windows_NT)
 else
@@ -64,7 +64,7 @@ PhysiCell_pugixml.o PhysiCell_settings.o PhysiCell_geometry.o
 
 # put your custom objects here (they should be in the custom_modules directory)
 
-PhysiCell_custom_module_OBJECTS := custom.o Utils.o Models.o
+PhysiCell_custom_module_OBJECTS := custom.o
 
 pugixml_OBJECTS := pugixml.o
 
@@ -179,13 +179,7 @@ PhysiCell_geometry.o: ./modules/PhysiCell_geometry.cpp
 
 custom.o: ./custom_modules/custom.cpp 
 	$(COMPILE_COMMAND) -c ./custom_modules/custom.cpp
-	
-Utils.o: ./custom_modules/Utils.cpp 
-	$(COMPILE_COMMAND) -c ./custom_modules/Utils.cpp
 
-Models.o: ./custom_modules/Models.cpp
-	$(COMPILE_COMMAND) -c ./custom_modules/Models.cpp
-	
 # cleanup
 
 reset:

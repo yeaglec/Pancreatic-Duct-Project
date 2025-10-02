@@ -388,8 +388,8 @@
         <number_of_cells type="int" units="none" description="initial number of cells (for each cell type)">0</number_of_cells>
         <membrane_interaction_length type="double" units="micron" description="cell membrane interaction length">500</membrane_interaction_length>
         <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">0</membrane_adhesion_strength>
-        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">0.01</membrane_spring_constant>
-        <membrane_num_points type="int" units="none" description="number of points for the membrane shape">250</membrane_num_points>
+        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">0.1</membrane_spring_constant>
+        <membrane_num_points type="int" units="none" description="number of points for the membrane shape">100</membrane_num_points>
         <number_EP_cells type="int" units="none" description="number of epithelial cells">1</number_EP_cells>
         <x type="double" units="micron" description="x position of the first epithelial cell">-125</x>
         <y type="double" units="micron" description="y position of the first epithelial cell">100</y>
@@ -406,7 +406,7 @@
         <membrane_circle_radius type="double" units="micron" description="radius of the circular membrane">300</membrane_circle_radius>
         <proliferation_exit_rate type="double" units="1/min" description="exit rate for proliferation">0</proliferation_exit_rate>
         <membrane_correction_rate type="double" units="micron/min" description="membrane repulsion strength">1</membrane_correction_rate>
-        <elastic_BM type="double" units="1/min" description="elastic adhesion rate">0</elastic_BM>
+        <elastic_BM type="double" units="1/min" description="elastic adhesion rate">1</elastic_BM>
         <test_velocity_magnitude type="double" units="micron/min" description="test velocity magnitude">1</test_velocity_magnitude>
     </user_parameters>
 </PhysiCell_settings>

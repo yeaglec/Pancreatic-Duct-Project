@@ -105,9 +105,16 @@ static double ls_xmin = 0.0, ls_ymin = 0.0;
 extern std::vector<std::vector<double>> boundary_membrane_pts; // Boundary points for the basement membrane
 extern std::vector<double> initial_edge_length; // Precomputed edge lengths for spring forces
 
+void update_basement_membrane_deformation(double dt);
 void update_basement_membrane_deformation2(double dt);
 
 //___________________________________________________________________________
+
+// Helper function for visualization of boundary
+void boundary_to_csv(
+    const std::vector<std::vector<double>>& boundary_pts,
+    const std::string& filename
+);
 
 
 
