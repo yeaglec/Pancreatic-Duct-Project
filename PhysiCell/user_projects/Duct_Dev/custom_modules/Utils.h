@@ -29,8 +29,10 @@ std::pair<double,double> voxel_indices(Cell* pCell);
 bool is_inside(double x, double y, const std::vector<std::vector<double>>& BM_pts);
 
 std::tuple<double, double, double, double, double> project_point_onto_boundary(double x, double y);
-std::vector<std::vector<double>> generate_boundary_shape(double a, double b, double amp, int freq, int num_points);
-std::vector<std::vector<double>> generate_circle_boundary(double radius, int num_points);
+std::vector<std::vector<double>> generate_boundary_shape(double a, double b, double amp, int freq);
+std::vector<std::vector<double>> generate_circle_boundary();
+void generate_circle_cells();
+void generate_boundary_cells(double a, double b, double amp, int freq);
 
 void parallel_cell_division( Cell* parent, Cell* child );
 

@@ -170,7 +170,7 @@ void update_basement_membrane_deformation(double dt){
 
 }
 
-void initialize_level_set_duct(){
+void initialize_level_set_duct(std::vector<std::vector<double>> boundary_membrane_pts){
 	std::cout << "Initializing level set function for the duct..." << std::endl;
 
 	auto& mesh = get_default_microenvironment()->mesh;
@@ -182,16 +182,7 @@ void initialize_level_set_duct(){
 	int Nx = (int)((mesh.bounding_box[3] - ls_xmin) / ls_dx);
 	int Ny = (int)((mesh.bounding_box[4] - ls_ymin) / ls_dy); // Might need +1 here to include bb
 
-	level_set_phi.assign(Nx, std::vector<double>(Ny, 0.0)); // Nx x Ny matrix initialized to zero
-
-	// Creating BM shape
-	int num_points = parameters.ints("membrane_num_points");
-	double a = 300.0, b = 250.0;   // Length of ellipse axes
-	double amp = 0.1;              // Amplitude of deformation
-	int freq = 4;                 // Number of bumps
-
-	double circle_radius = parameters.doubles("membrane_circle_radius");
-	boundary_membrane_pts = generate_circle_boundary(circle_radius, num_points);
+	level_set_phi.assign(Nx, std::vector<double>(Ny, 0.0)); // Nx x Ny matrix initialized to zer0
 
 	int Np = (int)boundary_membrane_pts.size();
 	initial_edge_length.resize(Np);

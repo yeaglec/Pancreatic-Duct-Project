@@ -94,15 +94,15 @@ std::pair<double,double> basement_membrane_interactions_cc(Cell* pCell)
     double R = pCell->phenotype.geometry.radius;
     double de = d - (d < 0 ? -R : R); // Effective distance
 
-	if (de > 0) {
+	// if (de > 0) {
 
-		return {0.0, 0.0}; // Remove deformation if cells pass through boundary
-    }
+	// 	return {0.0, 0.0}; // Remove deformation if cells pass through boundary
+    // }
 
     double BM_deadzone = parameters.doubles("membrane_deadzone");
     if (fabs(de) < BM_deadzone) return {0.0, 0.0};
 
-    double strength = parameters.doubles("membrane_spring_constant"); // Parameter for spring constant
+    double strength = parameters.doubles("membrane_spring_constant"); 
     double mag = strength * fabs(de);  // Hooke's law, F = kx
 
     double nx = px - cell_x; // Normal vector from cell to boundary
@@ -115,7 +115,6 @@ std::pair<double,double> basement_membrane_interactions_cc(Cell* pCell)
         ny /= norm;
     }
 
-    double sign = (d < 0.0 ? -1.0 : 1.0);
 	// mag = parameters.doubles("test_velocity_magnitude");
     double Fx =  mag * nx;  // Force components: Hookean force applied in the normal direction
     double Fy =  mag * ny;
@@ -128,6 +127,7 @@ void cell_interactions_cc(Cell* pCell,
                                    Phenotype& phenotype,
                                    double dt)
 {
+	
     double cell_x = pCell->position[0];
     double cell_y = pCell->position[1];
 
@@ -279,15 +279,18 @@ void update_basement_membrane_deformation2(double dt)
 			double dx = boundary_membrane_pts[j][0] - boundary_membrane_pts[i][0];
 			double dy = boundary_membrane_pts[j][1] - boundary_membrane_pts[i][1];
 
-			std::cout << "dx: " << dx << " dy: " << dy << std::endl;
+			std::cout << "__dx: " << dx << " dy: " << dy << std::endl;
 
 			double length = std::sqrt(dx*dx + dy*dy);
+
+			std::cout << "LENGTH: " << length << std::endl;
 			double rest   = initial_edge_length[i];  // stored initial length
+			std::cout << "__rest: " << rest << std::endl;
 
 
 			if (length <= 1e-12 || rest <= 1e-12){
 
-				std::cout << "Houston, we have a problem" << std::endl;
+				continue;
 			}
 
 			double fspring = 0.0;
@@ -315,7 +318,6 @@ void update_basement_membrane_deformation2(double dt)
 		}
 	}
 
-
 	// Update node positions
     for (int i = 0; i < Np; ++i) {
         boundary_membrane_pts[i][0] += node_forces[i].first  * dt;
@@ -324,6 +326,28 @@ void update_basement_membrane_deformation2(double dt)
 
     // Rebuild signed distance field after modifications
     rebuild_signed_distance_field();
+}
+
+void clustered_cell(double a, double b, double amp, int freq, int num_points, double center_x, double center_y, double radius, std::string type)
+{
+	Cell_Definition* pBM_def = cell_definitions_by_name[type];   //cell_definitions_by_name[ type_name ] = pCD; 
+	std::cout << "Creating clustered BM cells..." << std::endl;
+	std::vector<std::vector<double>> pts;
+	pts.reserve(num_points);
+
+
+    for (int j = 0; j < num_points; j++) {
+        // Place cells randomly within a disc for a more real look
+        double r = radius * sqrt(UniformRandom()); // sqrt for uniform area distribution
+        double theta = 2.0 * M_PI * UniformRandom();
+        
+        double cx = center_x + r * cos(theta);
+        double cy = center_y + r * sin(theta);
+        
+        Cell* pC2 = create_cell(*pBM_def);
+        pC2->assign_position({cx, cy, 0.0}); 
+    }
+
 }
 
 // ________________________________________________________________________________________________________________________
@@ -359,6 +383,9 @@ void create_cell_types( void )
 	cell_defaults.functions.volume_update_function = standard_volume_update_function;
 	cell_defaults.functions.update_velocity = standard_update_cell_velocity;
 
+	cell_defaults.functions.add_cell_basement_membrane_interactions = cell_interactions_cc; 
+	cell_defaults.functions.calculate_distance_to_membrane = distance_to_membrane; 
+
 	cell_defaults.functions.update_migration_bias = NULL; 
 	cell_defaults.functions.update_phenotype = NULL; // update_cell_and_death_parameters_O2_based; 
 	cell_defaults.functions.custom_cell_rule = NULL; 
@@ -376,11 +403,22 @@ void create_cell_types( void )
 	   This builds the map of cell definitions and summarizes the setup. 
 	*/
 		
-	cell_defaults.functions.add_cell_basement_membrane_interactions = cell_interactions_cc; 
-	cell_defaults.functions.calculate_distance_to_membrane = distance_to_membrane; 
 
 	build_cell_definitions_maps(); 
 
+	// Ensure BM helper functions are assigned for types that should have BM interactions
+
+	std::vector<std::string> bm_targets = {"Epithelial","CAF","BM"};
+	for (auto &name : bm_targets) {
+		auto it = cell_definitions_by_name.find(name);
+		if (it == cell_definitions_by_name.end()) continue;
+		Cell_Definition* pDef = it->second;
+		pDef->functions.add_cell_basement_membrane_interactions = cell_interactions_cc;
+		pDef->functions.calculate_distance_to_membrane = distance_to_membrane;
+	}
+
+
+	
 	/*
 	   This intializes cell signal and response dictionaries 
 	*/
@@ -461,116 +499,45 @@ void setup_tissue( void )
 	//_______________________________________________________________________________________________________________________
 	// Placing cells to test the basement membrane deformation
 
-	// // Create new shape for the basement membrane
-	// int num_ep_points = parameters.ints("membrane_num_points")/2;
-	// double a = 300.0, b = 250.0;
-	// int n_pts = 200;
-	// double amp = 0.1;   // put in header later
-	// int lobes = 4;
+	// Example code for generating a arbitrary boundary
 
-	// auto BM_pts = generate_boundary_shape(a, b, amp, lobes, num_ep_points);
-	// Cell_Definition* pBM_def = cell_definitions_by_index[0];
-
-	// int n_BM_cells = 0;
-	// for (auto &pt : BM_pts){
-	// 	if(n_BM_cells < 3){
-	// 	Cell* pBM = create_cell( *pBM_def );
-	// 	pBM->assign_position( pt );
-	// 	}
-	// 	n_BM_cells++;
-	// }
-
-	// Generating points for a deformed ellipse like shape
-	// int num_ep = parameters.ints("number_EP_cells");
-	// double a = 300.0, b = 250.0;
-	// double amp = 0.1;              // Amplitude of deformation
-	// int freq = 4;  
-	// Cell_Definition* pBM_def = cell_definitions_by_index[0];
-	// double ep_dis = parameters.doubles("ep_displacement");
-
-    // for (int i = 0; i < num_ep; i++) {
-        
-    //     double theta = 2.0 * M_PI * i / (num_ep);
-        
-    //     double r_x = a * (1.0 + amp * cos(freq * theta));
-    //     double r_y = b * (1.0 + amp * sin(freq * theta));
-    //     double x = r_x * cos(theta);
-    //     double y = r_y * sin(theta);
-
-	// 	// compute radial distance and unit‐radial direction
-	// 	double r_norm = std::sqrt(x*x + y*y);
-	// 	double nx = x / r_norm;    // outward radial unit vector
-	// 	double ny = y / r_norm;
-
-	// 	// step back along the normal by ep_dis
-	// 	double xi = x - ep_dis * nx;
-	// 	double yi = y - ep_dis * ny;
-
-	// 	Cell* pC = create_cell( *pBM_def );
-	// 	if( parameters.ints("number_EP_cells") > 1 ){
-	// 		pC->assign_position( { xi, yi, 0.0 } );
-	// 	}
-	// 	else{
-	// 		pC->assign_position( { parameters.doubles("x"), parameters.doubles("y"), 0.0 } );
-	// 	}
-		
-	// }
-
-	// int cluster_cell_count = parameters.ints("cluster_cell_count"); 
-    // double cluster_center_x = parameters.doubles("cluster_center_x"); // Example: get from XML
-    // double cluster_center_y = parameters.doubles("cluster_center_y"); // Example: get from XML
-    // double cluster_radius = parameters.doubles("cluster_radius"); // Example: get from XML
-
-    // for (int j = 0; j < cluster_cell_count; j++) {
-    //     // Place cells randomly within a disc for a more real look
-    //     double r = cluster_radius * sqrt(UniformRandom()); // sqrt for uniform area distribution
-    //     double theta = 2.0 * M_PI * UniformRandom();
-        
-    //     double cx = cluster_center_x + r * cos(theta);
-    //     double cy = cluster_center_y + r * sin(theta);
-        
-    //     Cell* pC2 = create_cell(*pBM_def);
-    //     pC2->assign_position({cx, cy, 0.0});
-    // }
-
-	// Trying to make a cirlce
-
+	int num_points = parameters.ints("membrane_num_points");
+	double a = 300.0, b = 250.0;
+	double amp = 0.1;              // Amplitude of deformation
+	int freq = 4;  
 	int num_ep = parameters.ints("number_EP_cells");
-	Cell_Definition* pBM_def = cell_definitions_by_index[0];
-	double ep_dis = parameters.doubles("ep_displacement");
 
-	for (int i=0; i<num_ep; i++) {
-		double theta = 2.0 * M_PI * i / num_ep;
-		double radius = parameters.doubles("membrane_circle_radius");
-		double x = radius * cos(theta);
-		double y = radius * sin(theta);
+	boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
+	// generate_boundary_cells(a, b, amp, freq);
 
-		// compute radial distance and unit‐radial direction
-		double r_norm = std::sqrt(x*x + y*y);
-		double nx = x / r_norm;    // outward radial unit vector
-		double ny = y / r_norm;
+	int num_caf = parameters.ints("number_CAF_cells");
+	// Cell_Definition* Caf_def = cell_definitions_by_index[2];
+	// Cell* Caf = create_cell( *Caf_def );
+	// Caf->assign_position( { 225,200, 0.0 } );
 
-		// step back along the normal by ep_dis
-		double xi = x - ep_dis * nx;
-		double yi = y - ep_dis * ny;
+	double CAFx = parameters.doubles("CAFx");
+	double CAFy = parameters.doubles("CAFy");
 
-		Cell* pC = create_cell( *pBM_def );
+	double EPx = parameters.doubles("EPx");
+	double EPy = parameters.doubles("EPy");
 
-		// Turn on proliferation for first cell
+	double CAF_rad = parameters.doubles("CAF_rad");
+	double EP_rad = parameters.doubles("EP_rad");
 
-		if( parameters.ints("number_EP_cells") > 1 ){
-			pC->assign_position( { xi, yi, 0.0 } );
-		}
-		else{
-			pC->assign_position( { parameters.doubles("x"), parameters.doubles("y"), 0.0 } );
-		}
-		
-		if (i==0){
-			std::cout << "Setting first cell to proliferate" << std::endl;
-			pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
-		}
-		
-	}
+	clustered_cell(a, b, amp, freq, num_caf, CAFx, CAFy, CAF_rad, "CAF");
+	clustered_cell(a, b, amp, freq, num_ep, EPx, EPy, EP_rad, "CAF");
+
+
+	// ##################
+
+	// Example Code for generating a circle boundary
+
+    // int num_points = parameters.ints("membrane_num_points");
+	// int num_ep = parameters.ints("number_EP_cells");
+	// double circle_radius = parameters.doubles("membrane_circle_radius");
+
+	// boundary_membrane_pts = generate_circle_boundary(circle_radius, num_points);
+	// generate_circle_cells(circle_radius, num_ep);
 
 
 	//_______________________________________________________________________________________________________________________
@@ -584,11 +551,8 @@ void setup_tissue( void )
 
 	}
 	
-	// Initialize the level set representation of the duct
-    // double duct_radius = parameters.doubles("duct_radius"); // Example: get from XML
-    // std::vector<double> duct_center = {0.0, 0.0, 0.0};
-    
-    initialize_level_set_duct();
+	
+    initialize_level_set_duct(boundary_membrane_pts);
 
 	return; 
 }

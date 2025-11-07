@@ -19,7 +19,7 @@ std::pair<double,double> basement_membrane_interactions_LSM(Cell* pCell);
 
 void rebuild_signed_distance_field();
 void update_basement_membrane_deformation(double dt);
-void initialize_level_set_duct();
+void initialize_level_set_duct(std::vector<std::vector<double>> boundary_membrane_pts);
 
 
 

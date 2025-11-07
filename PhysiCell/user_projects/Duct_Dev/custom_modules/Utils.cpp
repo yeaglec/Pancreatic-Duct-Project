@@ -177,8 +177,9 @@ std::tuple<double, double, double, double, double> project_point_onto_boundary(d
 }
 
 // Rudimentary function to generate duct shape
-std::vector<std::vector<double>> generate_boundary_shape(double a, double b, double amp, int freq, int num_points){
+std::vector<std::vector<double>> generate_boundary_shape(double a, double b, double amp, int freq){
 
+	int num_points = parameters.ints("membrane_num_points");
 	std::vector<std::vector<double>> pts;
 	pts.reserve(num_points);
     
@@ -197,9 +198,51 @@ std::vector<std::vector<double>> generate_boundary_shape(double a, double b, dou
     return pts;
 }
 
-std::vector<std::vector<double>> generate_circle_boundary(double radius, int num_points){
+// Generating points for a deformed ellipse like shape
+void generate_boundary_cells(double a, double b, double amp, int freq){
+	int num_ep = parameters.ints("number_EP_cells");
+	Cell_Definition* pBM_def = cell_definitions_by_index[0];
+	double ep_dis = parameters.doubles("ep_displacement");
 
-	std::vector<std::vector<double>> pts;
+    for (int i = 0; i < num_ep; i++) {
+        
+        double theta = 2.0 * M_PI * i / (num_ep);
+        
+        double r_x = a * (1.0 + amp * cos(freq * theta));
+        double r_y = b * (1.0 + amp * sin(freq * theta));
+        double x = r_x * cos(theta);
+        double y = r_y * sin(theta);
+
+		// compute radial distance and unit‐radial direction
+		double r_norm = std::sqrt(x*x + y*y);
+		double nx = x / r_norm;    // outward radial unit vector
+		double ny = y / r_norm;
+
+		// step back along the normal by ep_dis
+		double xi = x - ep_dis * nx;
+		double yi = y - ep_dis * ny;
+
+		Cell* pC = create_cell( *pBM_def );
+		if( parameters.ints("number_EP_cells") > 1 ){
+			pC->assign_position( { xi, yi, 0.0 } );
+		}
+		else{
+			pC->assign_position( { parameters.doubles("x"), parameters.doubles("y"), 0.0 } );
+		}
+		
+		if (i==0){
+			std::cout << "Setting first cell to proliferate" << std::endl;
+			pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
+		}
+		
+		
+	}
+}
+
+std::vector<std::vector<double>> generate_circle_boundary(){
+	double radius = parameters.doubles("membrane_circle_radius");
+	double num_points = parameters.doubles("membrane_num_points");
+	std::vector<std::vector<double>> pts;	
 	pts.reserve(num_points);
 
 	for (int i = 0; i < num_points; i++) {
@@ -210,6 +253,47 @@ std::vector<std::vector<double>> generate_circle_boundary(double radius, int num
 	}
 	return pts;
 }
+
+void generate_circle_cells(){
+	
+		int num_ep = parameters.ints("number_EP_cells");
+		Cell_Definition* pBM_def = cell_definitions_by_index[0];
+		double ep_dis = parameters.doubles("ep_displacement");
+
+		for (int i=0; i<num_ep; i++) {
+			double theta = 2.0 * M_PI * i / num_ep;
+			double radius = parameters.doubles("membrane_circle_radius");
+			double x = radius * cos(theta);
+			double y = radius * sin(theta);
+
+			// compute radial distance and unit‐radial direction
+			double r_norm = std::sqrt(x*x + y*y);
+			double nx = x / r_norm;    // outward radial unit vector
+			double ny = y / r_norm;
+
+			// step back along the normal by ep_dis
+			double xi = x - ep_dis * nx;
+			double yi = y - ep_dis * ny;
+
+			Cell* pC = create_cell( *pBM_def );
+
+			// Turn on proliferation for first cell
+
+			if( parameters.ints("number_EP_cells") > 1 ){
+				pC->assign_position( { xi, yi, 0.0 } );
+			}
+			else{
+				pC->assign_position( { parameters.doubles("x"), parameters.doubles("y"), 0.0 } );
+			}
+			
+			if (i==0){
+				std::cout << "Setting first cell to proliferate" << std::endl;
+				pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
+			}
+			
+		}
+	}
+
 
 // Cameron Code for division parallel to segments
 void parallel_cell_division( Cell* parent, Cell* child ){
