@@ -391,7 +391,7 @@
                 </cycle>
                 <death>
                     <model code="100" name="apoptosis">
-                        <death_rate units="1/min">5.31667e-05</death_rate>
+                        <death_rate units="1/min">0</death_rate>
                         <phase_transition_rates units="1/min">
                             <rate start_index="0" end_index="1" fixed_duration="false">0.001938</rate>
                         </phase_transition_rates>
@@ -540,15 +540,15 @@
     <user_parameters>
         <number_of_cells type="int" units="none" description="initial number of cells (for each cell type)">0</number_of_cells>
         <membrane_interaction_length type="double" units="micron" description="cell membrane interaction length">500</membrane_interaction_length>
-        <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">0</membrane_adhesion_strength>
-        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">.0025</membrane_spring_constant>
-        <membrane_num_points type="int" units="none" description="number of points for the membrane shape">200</membrane_num_points>
+        <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">.005</membrane_adhesion_strength>
+        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">.005</membrane_spring_constant>
+        <membrane_num_points type="int" units="none" description="number of points for the membrane shape">250</membrane_num_points>
         <ep_displacement type="double" units="micron" description="epithelial cell displacement">10</ep_displacement>
         <membrane_deadzone type="double" units="micron/min" description="deadzone for the membrane spring force">5</membrane_deadzone>
         <cell_deadzone type="double" units="micron/min" description="deadzone for the cell spring force">5</cell_deadzone>
         <membrane_force_smoothing_sigma type="double" units="micron" description="sigma for the membrane force smoothing">25</membrane_force_smoothing_sigma>
-        <proliferation_exit_rate type="double" units="1/min" description="exit rate for proliferation">0</proliferation_exit_rate>
-        <membrane_correction_rate type="double" units="micron/min" description="membrane repulsion strength">0</membrane_correction_rate>
+        <proliferation_exit_rate type="double" units="1/min" description="exit rate for proliferation">.0015</proliferation_exit_rate>
+        <membrane_correction_rate type="double" units="micron/min" description="membrane repulsion strength">1</membrane_correction_rate>
         <___tests___ type="double" units="none" description="test parameter">0</___tests___>
         <x type="double" units="micron" description="x position of the first epithelial cell">180</x>
         <y type="double" units="micron" description="y position of the first epithelial cell">140</y>
@@ -558,13 +558,13 @@
         <elastic_BM type="double" units="1/min" description="elastic adhesion rate">0</elastic_BM>
         <test_velocity_magnitude type="double" units="micron/min" description="test velocity magnitude">1</test_velocity_magnitude>
         <rep_test type="double" units="micron/min" description="repulsion test">0</rep_test>
-        <number_CAF_cells type="int" units="none" description="number of CAF cells">5</number_CAF_cells>
-        <number_EP_cells type="int" units="none" description="number of epithelial cells">5</number_EP_cells>
-        <CAFx type="double" units="micron" description="x position of the first CAF cell">250</CAFx>
-        <CAFy type="double" units="micron" description="y position of the first CAF cell">-200</CAFy>
+        <number_CAF_cells type="int" units="none" description="number of CAF cells">2</number_CAF_cells>
+        <number_EP_cells type="int" units="none" description="number of epithelial cells">125</number_EP_cells>
+        <CAFx type="double" units="micron" description="x position of the first CAF cell">230</CAFx>
+        <CAFy type="double" units="micron" description="y position of the first CAF cell">-175</CAFy>
         <EPx type="double" units="micron" description="x position of the first epithelial cell">-265</EPx>
         <EPy type="double" units="micron" description="y position of the first epithelial cell">200</EPy>
-        <CAF_rad type="double" units="micron" description="radius of the clustered cells">40</CAF_rad>
+        <CAF_rad type="double" units="micron" description="radius of the clustered cells">20</CAF_rad>
         <EP_rad type="double" units="micron" description="radius of the first epithelial cell">40</EP_rad>
     </user_parameters>
 </PhysiCell_settings>

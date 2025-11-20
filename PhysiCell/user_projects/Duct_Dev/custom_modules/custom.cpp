@@ -127,7 +127,6 @@ void cell_interactions_cc(Cell* pCell,
                                    Phenotype& phenotype,
                                    double dt)
 {
-	
     double cell_x = pCell->position[0];
     double cell_y = pCell->position[1];
 
@@ -188,6 +187,7 @@ void cell_interactions_cc(Cell* pCell,
 		pCell->velocity[1] += mag * ny;
 	}
 }
+
 
 
 void update_basement_membrane_deformation2(double dt)
@@ -508,7 +508,7 @@ void setup_tissue( void )
 	int num_ep = parameters.ints("number_EP_cells");
 
 	boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
-	// generate_boundary_cells(a, b, amp, freq);
+	generate_boundary_cells(a, b, amp, freq);
 
 	int num_caf = parameters.ints("number_CAF_cells");
 	// Cell_Definition* Caf_def = cell_definitions_by_index[2];
@@ -524,8 +524,8 @@ void setup_tissue( void )
 	double CAF_rad = parameters.doubles("CAF_rad");
 	double EP_rad = parameters.doubles("EP_rad");
 
-	clustered_cell(a, b, amp, freq, num_caf, CAFx, CAFy, CAF_rad, "CAF");
-	clustered_cell(a, b, amp, freq, num_ep, EPx, EPy, EP_rad, "CAF");
+	// clustered_cell(a, b, amp, freq, num_caf, CAFx, CAFy, CAF_rad, "CAF");
+	
 
 
 	// ##################
