@@ -199,14 +199,14 @@ std::vector<std::vector<double>> generate_boundary_shape(double a, double b, dou
 }
 
 // Generating points for a deformed ellipse like shape
-void generate_boundary_cells(double a, double b, double amp, int freq){
-	int num_ep = parameters.ints("number_EP_cells");
-	Cell_Definition* pBM_def = cell_definitions_by_index[0];
-	double ep_dis = parameters.doubles("ep_displacement");
+void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells){
+	
+	Cell_Definition* pBM_def = cell_definitions_by_name[type];   //cell_definitions_by_name[ type_name ] = pCD; 
+	;
 
-    for (int i = 0; i < num_ep; i++) {
+    for (int i = 0; i < num_cells; i++) {
         
-        double theta = 2.0 * M_PI * i / (num_ep);
+        double theta = 2.0 * M_PI * i / (num_cells);
         
         double r_x = a * (1.0 + amp * cos(freq * theta));
         double r_y = b * (1.0 + amp * sin(freq * theta));
@@ -219,8 +219,8 @@ void generate_boundary_cells(double a, double b, double amp, int freq){
 		double ny = y / r_norm;
 
 		// step back along the normal by ep_dis
-		double xi = x - ep_dis * nx;
-		double yi = y - ep_dis * ny;
+		double xi = x - dis * nx;
+		double yi = y - dis * ny;
 
 		Cell* pC = create_cell( *pBM_def );
 		if( parameters.ints("number_EP_cells") > 1 ){
@@ -231,8 +231,15 @@ void generate_boundary_cells(double a, double b, double amp, int freq){
 		}
 		
 		if (i==0){
-			std::cout << "Setting first cell to proliferate" << std::endl;
-			pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
+
+			if (type =="Epithelial"){
+				std::cout << "Setting first cell to proliferate" << std::endl;
+				pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
+			}
+			
+			else{ 
+				pC->phenotype.cycle.data.exit_rate(0) = 0;
+			}
 		}
 		
 		
