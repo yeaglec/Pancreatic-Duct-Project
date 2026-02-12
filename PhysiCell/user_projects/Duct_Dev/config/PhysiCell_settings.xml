@@ -540,32 +540,34 @@
     <user_parameters>
         <number_of_cells type="int" units="none" description="initial number of cells (for each cell type)">0</number_of_cells>
         <membrane_interaction_length type="double" units="micron" description="cell membrane interaction length">500</membrane_interaction_length>
-        <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">.005</membrane_adhesion_strength>
-        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">.005</membrane_spring_constant>
-        <membrane_num_points type="int" units="none" description="number of points for the membrane shape">175</membrane_num_points>
+        <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">0</membrane_adhesion_strength>
+        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">0</membrane_spring_constant>
+        <membrane_num_points type="int" units="none" description="number of points for the membrane shape">2</membrane_num_points>
         <ep_displacement type="double" units="micron" description="epithelial cell displacement">10</ep_displacement>
         <membrane_deadzone type="double" units="micron/min" description="deadzone for the membrane spring force">5</membrane_deadzone>
         <cell_deadzone type="double" units="micron/min" description="deadzone for the cell spring force">5</cell_deadzone>
         <membrane_force_smoothing_sigma type="double" units="micron" description="sigma for the membrane force smoothing">25</membrane_force_smoothing_sigma>
         <proliferation_exit_rate type="double" units="1/min" description="exit rate for proliferation">.002</proliferation_exit_rate>
-        <membrane_correction_rate type="double" units="micron/min" description="membrane repulsion strength">1</membrane_correction_rate>
+        <membrane_correction_rate type="double" units="micron/min" description="membrane repulsion strength">0</membrane_correction_rate>
         <___tests___ type="double" units="none" description="test parameter">0</___tests___>
-        <x type="double" units="micron" description="x position of the first epithelial cell">180</x>
-        <y type="double" units="micron" description="y position of the first epithelial cell">140</y>
+        <x type="double" units="micron" description="x position of the first epithelial cell">50</x>
+        <y type="double" units="micron" description="y position of the first epithelial cell">-100</y>
         <deformation_time_step type="double" units="min" description="time step for the basement membrane deformation">0</deformation_time_step>
-        <elastic_constant type="double" units="1/min" description="membrane elastic constant">0</elastic_constant>
         <membrane_circle_radius type="double" units="micron" description="radius of the circular membrane">300</membrane_circle_radius>
-        <elastic_BM type="double" units="1/min" description="elastic adhesion rate">100</elastic_BM>
         <test_velocity_magnitude type="double" units="micron/min" description="test velocity magnitude">1</test_velocity_magnitude>
         <rep_test type="double" units="micron/min" description="repulsion test">0</rep_test>
-        <number_CAF_cells type="int" units="none" description="number of CAF cells">40</number_CAF_cells>
-        <number_EP_cells type="int" units="none" description="number of epithelial cells">125</number_EP_cells>
+        <number_CAF_cells type="int" units="none" description="number of CAF cells">0</number_CAF_cells>
+        <number_EP_cells type="int" units="none" description="number of epithelial cells">0</number_EP_cells>
         <CAFx type="double" units="micron" description="x position of the first CAF cell">340</CAFx>
         <CAFy type="double" units="micron" description="y position of the first CAF cell">0</CAFy>
         <EPx type="double" units="micron" description="x position of the first epithelial cell">-265</EPx>
         <EPy type="double" units="micron" description="y position of the first epithelial cell">200</EPy>
         <CAF_rad type="double" units="micron" description="radius of the clustered cells">20</CAF_rad>
         <EP_rad type="double" units="micron" description="radius of the first epithelial cell">40</EP_rad>
-        <stiffen_alpha type="double" units="1/min" description="stiffening alpha parameter">.9</stiffen_alpha>
+        <elastic_BM type="double" units="1/min" description="elastic adhesion rate">1</elastic_BM>
+        <elastic_constant type="double" units="1/min" description="membrane elastic constant">1</elastic_constant>
+        <stiffen_alpha type="double" units="1/min" description="stiffening alpha parameter">.001</stiffen_alpha>
+        <test_pull_force type="double" units="micron/min" description="test pull force">1</test_pull_force>
+        <home_restoring_rate type="double" units="micron/min" description="home restoring rate">0</home_restoring_rate>
     </user_parameters>
 </PhysiCell_settings>

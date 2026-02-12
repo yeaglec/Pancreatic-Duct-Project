@@ -186,10 +186,12 @@ void initialize_level_set_duct(std::vector<std::vector<double>> boundary_membran
 
 	int Np = (int)boundary_membrane_pts.size();
 	initial_edge_length.resize(Np);
+	initial_node_positions.resize(Np);
 
 	// Store initial edge lengths for elasticity calculations
 	for(int k = 0; k < Np; ++k)
 	{
+		initial_node_positions[k] = boundary_membrane_pts[k]; // Store initial node positions
 		int j = (k + 1) % Np;  
 		double dx = boundary_membrane_pts[j][0] - boundary_membrane_pts[k][0];
 		double dy = boundary_membrane_pts[j][1] - boundary_membrane_pts[k][1];

@@ -74,6 +74,7 @@
 
 std::vector<std::vector<double>> boundary_membrane_pts;
 std::vector<double> initial_edge_length; 
+std::vector<std::vector<double>> initial_node_positions; 
 
 
 // ______________________________________________________________________________________________________________________
@@ -339,39 +340,99 @@ void update_basement_membrane_deformation2(double dt)
 		double alpha = parameters.doubles("stiffen_alpha");
 
 		for(int i=0; i<Np; ++i){
-			for(int j=0; j<Np; ++j){
+			int j = (i + 1) % Np;
 
-				double dx = boundary_membrane_pts[j][0] - boundary_membrane_pts[i][0];
-            	double dy = boundary_membrane_pts[j][1] - boundary_membrane_pts[i][1];
+			double dx = boundary_membrane_pts[j][0] - boundary_membrane_pts[i][0];
+			double dy = boundary_membrane_pts[j][1] - boundary_membrane_pts[i][1];
 
-				double current_length = sqrt(dx*dx + dy*dy);
-				double rest_length = initial_edge_length[i];
-				if (current_length <= 1e-12) continue;
+			double current_length = sqrt(dx*dx + dy*dy);
+			double rest_length = initial_edge_length[i];
+			if (current_length <= 1e-12) continue;
 
-				// displacement (stretch)
-				double x = current_length - rest_length;
+			// displacement (stretch)
+			double x = current_length - rest_length;
 
-				// Calculate Magnitude: F = k * (exp(alpha * x) - 1)
-				// Note: If x is negative (compressed), F becomes negative, pushing nodes apart.
-				double F_mag = k * (std::exp(alpha * x) - 1.0);
-				
-				// Cap the force to help with blowups
-				double max_force = 100.0; 
-				if(F_mag > max_force) F_mag = max_force;
-				if(F_mag < -max_force) F_mag = -max_force;
+			// Calculate Magnitude: F = k * (exp(alpha * x) - 1)
+			// Note: If x is negative (compressed), F becomes negative, pushing nodes apart.
+			double F_mag = k * (std::exp(alpha * x) - 1.0);
+			
+			// Cap the force to help with blowups
+			double max_force = 100.0; 
+			if(F_mag > max_force) F_mag = max_force;
+			if(F_mag < -max_force) F_mag = -max_force;
 
-				// Force Updates
-				double nx = dx / current_length;
-				double ny = dy / current_length;
+			// Force Updates
+			double nx = dx / current_length;
+			double ny = dy / current_length;
 
-				node_forces[i].first  += F_mag * nx;
-				node_forces[i].second += F_mag * ny;
+			node_forces[i].first  += F_mag * nx;
+			node_forces[i].second += F_mag * ny;
 
-				node_forces[j].first  -= F_mag * nx;
-				node_forces[j].second -= F_mag * ny;
-			}
+			node_forces[j].first  -= F_mag * nx;
+			node_forces[j].second -= F_mag * ny;
+
+			std::cout << "Exponential Force Applied!!!!: " << F_mag << std::endl;
+			
 		}
 	}
+
+	// ##############################################
+	// Trying Restoring for for home positions
+
+	double home_rate =parameters.doubles("home_restoring_rate");
+	if (home_rate > 0.0){
+		for(int i=0; i<Np; ++i){
+			double home_x = initial_node_positions[i][0];
+			double home_y = initial_node_positions[i][1];
+
+			double current_x = boundary_membrane_pts[i][0];
+			double current_y = boundary_membrane_pts[i][1];
+
+			double dx = home_x - current_x;
+			double dy = home_y - current_y;
+
+			node_forces[i].first  += home_rate * dx;
+			node_forces[i].second += home_rate * dy;
+		}
+	}
+
+	// TESTING 
+	// Testing Resistive Forces 
+
+	double pull_force = parameters.doubles("test_pull_force");
+	node_forces[1].first += pull_force;
+	node_forces[0].first += pull_force; 
+
+	// Calculate current distance between Node 0 and Node 1
+	double dx = boundary_membrane_pts[1][0] - boundary_membrane_pts[0][0];
+	double dy = boundary_membrane_pts[1][1] - boundary_membrane_pts[0][1];
+	double current_len = sqrt(dx*dx + dy*dy);
+	double rest_len = initial_edge_length[0]; // Should be 10.0
+	double strain = (current_len - rest_len) / rest_len;
+
+	// As you increase alpha increses 'strain' should decrease!
+	std::cout << "TEST_REPORT: Time=" << PhysiCell_globals.current_time 
+			<< " Length=" << current_len 
+			<< " Strain=" << strain 
+			<< " Alpha=" << parameters.doubles("stiffen_alpha") << std::endl;
+
+	// // Calculate the distance of each node from its initial position
+
+	// double home_x = initial_node_positions[0][0]; // 0.0
+	// double current_x = boundary_membrane_pts[0][0];
+	// double drift_dist = current_x - home_x;
+
+	// // Calculate Edge Stretch (to prove Edge Force is asleep)
+	// double dx = boundary_membrane_pts[1][0] - boundary_membrane_pts[0][0];
+	// double dy = boundary_membrane_pts[1][1] - boundary_membrane_pts[0][1];
+	// double edge_len = sqrt(dx*dx + dy*dy);
+
+	// std::cout << "DRIFT TEST: Time=" << PhysiCell_globals.current_time 
+	// 		<< " Drift_X=" << drift_dist 
+	// 		<< " Edge_Length=" << edge_len 
+	// 		<< " Home_K=" << k_home << std::endl;
+
+
 
 	// Update node positions
     for (int i = 0; i < Np; ++i) {
@@ -556,34 +617,47 @@ void setup_tissue( void )
 
 	// Example code for generating a arbitrary boundary
 
-	int num_points = parameters.ints("membrane_num_points");
-	double a = 300.0, b = 250.0;
-	double amp = 0.1;              // Amplitude of deformation
-	int freq = 4;  
-	int num_ep = parameters.ints("number_EP_cells");
+	// int num_points = parameters.ints("membrane_num_points");
+	// double a = 300.0, b = 250.0;
+	// double amp = 0.1;              // Amplitude of deformation
+	// int freq = 4;  
+	// int num_ep = parameters.ints("number_EP_cells");
 
-	boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
-	double ep_dis = parameters.doubles("ep_displacement");
-	generate_boundary_cells(a, b, amp, freq, "Epithelial", ep_dis, num_ep);
+	// boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
+	// double ep_dis = parameters.doubles("ep_displacement");
+	// generate_boundary_cells(a, b, amp, freq, "Epithelial", ep_dis, num_ep, 0);
+
+	// int num_caf = parameters.ints("number_CAF_cells");
+	// // Cell_Definition* Caf_def = cell_definitions_by_index[2];
+	// // Cell* Caf = create_cell( *Caf_def );
+	// // Caf->assign_position( { 225,200, 0.0 } );
+
+	// double CAFx = parameters.doubles("CAFx");
+	// double CAFy = parameters.doubles("CAFy");
+
+	// double EPx = parameters.doubles("EPx");
+	// double EPy = parameters.doubles("EPy");
+
+	// double CAF_rad = parameters.doubles("CAF_rad");
+	// double EP_rad = parameters.doubles("EP_rad");
+
+	// generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf, 0);
+	
+	// _____________ TESTING Membrane Elasticity and Restoring Force __________________
+	boundary_membrane_pts.push_back({0.0, 50, 0.0}); 
+	boundary_membrane_pts.push_back({0.0, -50, 0.0});
+
+	int Np = (int)boundary_membrane_pts.size(); // Should be 2
+	std::cout << "Initial Boundary Points: " << Np << std::endl;
+	initial_edge_length.resize(Np);
+	initial_node_positions.resize(Np);
 
 	int num_caf = parameters.ints("number_CAF_cells");
-	// Cell_Definition* Caf_def = cell_definitions_by_index[2];
-	// Cell* Caf = create_cell( *Caf_def );
-	// Caf->assign_position( { 225,200, 0.0 } );
+	Cell_Definition* Caf_def = cell_definitions_by_index[2];
+	Cell* Caf = create_cell( *Caf_def );
+	Caf->assign_position( { 225,200, 0.0 } );
 
-	double CAFx = parameters.doubles("CAFx");
-	double CAFy = parameters.doubles("CAFy");
-
-	double EPx = parameters.doubles("EPx");
-	double EPy = parameters.doubles("EPy");
-
-	double CAF_rad = parameters.doubles("CAF_rad");
-	double EP_rad = parameters.doubles("EP_rad");
-
-	generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf);
 	
-
-
 	// ##################
 
 	// Example Code for generating a circle boundary
