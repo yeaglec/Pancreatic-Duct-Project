@@ -568,6 +568,6 @@
         <elastic_constant type="double" units="1/min" description="membrane elastic constant">1</elastic_constant>
         <stiffen_alpha type="double" units="1/min" description="stiffening alpha parameter">.001</stiffen_alpha>
         <test_pull_force type="double" units="micron/min" description="test pull force">1</test_pull_force>
-        <home_restoring_rate type="double" units="micron/min" description="home restoring rate">0</home_restoring_rate>
+        <home_restoring_rate type="double" units="micron/min" description="home restoring rate">.025</home_restoring_rate>
     </user_parameters>
 </PhysiCell_settings>
