@@ -32,7 +32,7 @@ std::tuple<double, double, double, double, double> project_point_onto_boundary(d
 std::vector<std::vector<double>> generate_boundary_shape(double a, double b, double amp, int freq);
 std::vector<std::vector<double>> generate_circle_boundary();
 void generate_circle_cells();
-void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells, int prof_on);
+void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells);
 
 void parallel_cell_division( Cell* parent, Cell* child );
 

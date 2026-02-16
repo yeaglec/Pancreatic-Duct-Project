@@ -74,6 +74,7 @@
 
 std::vector<std::vector<double>> boundary_membrane_pts;
 std::vector<double> initial_edge_length; 
+std::vector<std::vector<double>> initial_node_positions; 
 
 
 // ______________________________________________________________________________________________________________________
@@ -127,7 +128,6 @@ void cell_interactions_cc(Cell* pCell,
                                    Phenotype& phenotype,
                                    double dt)
 {
-	std::cout << "Cell-BM interaction called!" << std::endl;
     double cell_x = pCell->position[0];
     double cell_y = pCell->position[1];
 
@@ -137,57 +137,120 @@ void cell_interactions_cc(Cell* pCell,
     double d = inside ? -dist : dist;
 
     double R = pCell->phenotype.geometry.radius;
-	double de = fabs(d) - R; // Distance from cell surface to membrane
+    double de = d - (d < 0 ? -R : R);
 
-	// params 
+    // --- quick type check ---
+    std::string cell_name = cell_definitions_by_index[pCell->type]->name;
+    bool isCAF = (cell_name == "CAF");
+    bool isEP  = (cell_name == "Epithelial");
 
-	double cell_deadzone = parameters.doubles("cell_deadzone");
-    double correction_rate = parameters.doubles("membrane_correction_rate");
-    double L = parameters.doubles("membrane_interaction_length");
-    double strength = parameters.doubles("membrane_adhesion_strength");
 
-	// Implement replusion here
+    if (isEP)
+    {
+        // Implement replusion here (original EP behavior)
+        if (de > 0)
+        {
+            double cell_deadzone = parameters.doubles("cell_deadzone");
+            double displacement_needed = de + cell_deadzone; // Make cells only move to deadzone
 
-	if (de<0){    // Cell is penetrating membrane. Hence, push it away. 
+            double nx = cell_x - px; // away from boundary
+            double ny = cell_y - py;
+            double norm = sqrt(nx * nx + ny * ny);
+            if (norm > 1e-16)
+            {
+                nx /= norm;
+                ny /= norm;
+            }
 
-		double nx = cell_x - px; // vector from boundary to cell
-		double ny = cell_y - py;
-		// double norm = sqrt(nx*nx + ny*ny);
-		// if (norm < 1e-16) { nx = 0.0; ny = 0.0; }
-		// else { nx /= norm; ny /= norm; }
+            // Calculate the mag of the corrective velocity
+            double correction_rate = parameters.doubles("membrane_correction_rate");
+            double mag = correction_rate * displacement_needed;
 
-		// double displacement_needed = -de + cell_deadzone; // Make cells only move to deadzone
-		// double mag = correction_rate * displacement_needed;
-		
-		// // clamp to avoid exploding velocities
-		// // double max_correction = parameters.doubles("membrane_max_correction");
-		// // if (max_correction > 0.0 && mag > max_correction) mag = max_correction;
+            pCell->velocity[0] += mag * nx;
+            pCell->velocity[1] += mag * ny;
+        }
+        else
+        {
+            double L = parameters.doubles("membrane_interaction_length");
+            if (fabs(de) >= L) return;
 
-		// pCell->velocity[0] += mag * nx;
-		// pCell->velocity[1] += mag * ny;
-	}
+            double cell_deadzone = parameters.doubles("cell_deadzone");
+            if (fabs(de) < cell_deadzone) return;
 
-	else{ 
+            double strength = parameters.doubles("membrane_adhesion_strength");
+            double mag = strength * fabs(de);
 
-		if (fabs(de) >= L) return;
+            double nx = px - cell_x;
+            double ny = py - cell_y;
+            double norm = sqrt(nx * nx + ny * ny);
+            if (norm > 0)
+            {
+                nx /= norm;
+                ny /= norm;
+            }
 
-		if (fabs(de) < cell_deadzone) return;
+            pCell->velocity[0] += mag * nx;
+            pCell->velocity[1] += mag * ny;
+        }
 
-		double mag = strength * fabs(de);
+        return;
+    }
 
-		double nx = px - cell_x;
-		double ny = py - cell_y;
-		double norm = sqrt(nx * nx + ny * ny);
-		if (norm < 1e-16) { nx = 0.0; ny = 0.0; }
-		else { nx /= norm; ny /= norm; }
+    // --- CAF: treat de < 0 as penetration (they were outside originally) ---
+    if (isCAF)
+    {
+        if (de < 0)
+        {
+            double cell_deadzone = parameters.doubles("cell_deadzone");
+            double displacement_needed = fabs(de) + cell_deadzone; // move out to deadzone
 
-		// double max_adhesion = parameters.doubles("membrane_max_adhesion"); // add to XML if wanted
-        // if (max_adhesion > 0.0 && mag > max_adhesion) mag = max_adhesion;
+            double nx = cell_x - px; // away from boundary
+            double ny = cell_y - py;
+            double norm = sqrt(nx * nx + ny * ny);
+            if (norm > 1e-16)
+            {
+                nx /= norm;
+                ny /= norm;
+            }
 
-		pCell->velocity[0] += mag * nx;
-		pCell->velocity[1] += mag * ny;
-	}
+            double correction_rate = parameters.doubles("membrane_correction_rate");
+            double mag = correction_rate * displacement_needed;
+
+            pCell->velocity[0] += mag * nx;
+            pCell->velocity[1] += mag * ny;
+        }
+        else
+        {
+            // same adhesion behavior as EPs when not "inside"
+            double L = parameters.doubles("membrane_interaction_length");
+            if (fabs(de) >= L) return;
+
+            double cell_deadzone = parameters.doubles("cell_deadzone");
+            if (fabs(de) < cell_deadzone) return;
+
+            double strength = parameters.doubles("membrane_adhesion_strength");
+            double mag = strength * fabs(de);
+
+            double nx = px - cell_x;
+            double ny = py - cell_y;
+            double norm = sqrt(nx * nx + ny * ny);
+            if (norm > 0)
+            {
+                nx /= norm;
+                ny /= norm;
+            }
+
+            pCell->velocity[0] += mag * nx;
+            pCell->velocity[1] += mag * ny;
+        }
+
+        return;
+    }
+
+    // For other cell types: do nothing (or keep behavior by removing this return)
+    return;
 }
+
 
 
 void update_basement_membrane_deformation2(double dt)
@@ -273,50 +336,103 @@ void update_basement_membrane_deformation2(double dt)
 	double b = 2.10;    // High-strain stiffening parameter
 
 	if (parameters.doubles("elastic_BM")==1.0){ 
-		for (int i = 0; i < Np; ++i) {
+		double k = parameters.doubles("elastic_constant");
+		double alpha = parameters.doubles("stiffen_alpha");
+
+		for(int i=0; i<Np; ++i){
 			int j = (i + 1) % Np;
 
 			double dx = boundary_membrane_pts[j][0] - boundary_membrane_pts[i][0];
 			double dy = boundary_membrane_pts[j][1] - boundary_membrane_pts[i][1];
 
-			std::cout << "__dx: " << dx << " dy: " << dy << std::endl;
+			double current_length = sqrt(dx*dx + dy*dy);
+			double rest_length = initial_edge_length[i];
+			if (current_length <= 1e-12) continue;
 
-			double length = std::sqrt(dx*dx + dy*dy);
+			// displacement (stretch)
+			double x = current_length - rest_length;
 
-			std::cout << "LENGTH: " << length << std::endl;
-			double rest   = initial_edge_length[i];  // stored initial length
-			std::cout << "__rest: " << rest << std::endl;
+			// Calculate Magnitude: F = k * (exp(alpha * x) - 1)
+			// Note: If x is negative (compressed), F becomes negative, pushing nodes apart.
+			double F_mag = k * (std::exp(alpha * x) - 1.0);
+			
+			// Cap the force to help with blowups
+			double max_force = 100.0; 
+			if(F_mag > max_force) F_mag = max_force;
+			if(F_mag < -max_force) F_mag = -max_force;
 
+			// Force Updates
+			double nx = dx / current_length;
+			double ny = dy / current_length;
 
-			if (length <= 1e-12 || rest <= 1e-12){
+			node_forces[i].first  += F_mag * nx;
+			node_forces[i].second += F_mag * ny;
 
-				continue;
-			}
+			node_forces[j].first  -= F_mag * nx;
+			node_forces[j].second -= F_mag * ny;
 
-			double fspring = 0.0;
-			double lambda = length / rest;
-			double inv_lambda = 1.0 / lambda;
-
-			// compute exponent argument
-
-			double high_strain = b * (lambda*lambda + 2.0*inv_lambda - 3.0);
-			if (high_strain > 100.0) high_strain = 100.0;
-			if (high_strain < -100.0) high_strain = -100.0;
-
-			double Fung_sigma = G * (lambda*lambda - inv_lambda) * std::exp(high_strain); // Fung's Model 
-			fspring = - Fung_sigma * rest;
-
-			// direction components
-			double fx = fspring * (dx / length);
-			double fy = fspring * (dy / length);
-
-			// add to nodal forces (i is pulled toward j and vice versa)
-			node_forces[i].first  -= fx;
-			node_forces[i].second -= fy;
-			node_forces[j].first  += fx;
-			node_forces[j].second += fy;
+			// std::cout << "Exponential Force Applied!!!!: " << F_mag << std::endl;
+			
 		}
 	}
+
+	// ##############################################
+	// Trying Restoring for for home positions
+
+	double home_rate =parameters.doubles("home_restoring_rate");
+	if (home_rate > 0.0){
+		for(int i=0; i<Np; ++i){
+			double home_x = initial_node_positions[i][0];
+			double home_y = initial_node_positions[i][1];
+
+			double current_x = boundary_membrane_pts[i][0];
+			double current_y = boundary_membrane_pts[i][1];
+
+			double dx = home_x - current_x;
+			double dy = home_y - current_y;
+
+			node_forces[i].first  += home_rate * dx;
+			node_forces[i].second += home_rate * dy;
+		}
+	}
+
+	// TESTING 
+	// Testing Resistive Forces 
+
+	// double pull_force = parameters.doubles("test_pull_force");
+	// node_forces[1].first += pull_force;
+	// node_forces[0].first += pull_force; 
+
+	// // Calculate current distance between Node 0 and Node 1
+	// double dx = boundary_membrane_pts[1][0] - boundary_membrane_pts[0][0];
+	// double dy = boundary_membrane_pts[1][1] - boundary_membrane_pts[0][1];
+	// double current_len = sqrt(dx*dx + dy*dy);
+	// double rest_len = initial_edge_length[0]; // Should be 10.0
+	// double strain = (current_len - rest_len) / rest_len;
+
+	// // As you increase alpha increses 'strain' should decrease!
+	// // std::cout << "TEST_REPORT: Time=" << PhysiCell_globals.current_time 
+	// // 		<< " Length=" << current_len 
+	// // 		<< " Strain=" << strain 
+	// // 		<< " Alpha=" << parameters.doubles("stiffen_alpha") << std::endl;
+
+	// // // Calculate the distance of each node from its initial position
+
+	// // double home_x = initial_node_positions[0][0]; // 0.0
+	// // double current_x = boundary_membrane_pts[0][0];
+	// // double drift_dist = current_x - home_x;
+
+	// // // Calculate Edge Stretch (to prove Edge Force is asleep)
+	// // double dx = boundary_membrane_pts[1][0] - boundary_membrane_pts[0][0];
+	// // double dy = boundary_membrane_pts[1][1] - boundary_membrane_pts[0][1];
+	// // double edge_len = sqrt(dx*dx + dy*dy);
+
+	// // std::cout << "DRIFT TEST: Time=" << PhysiCell_globals.current_time 
+	// // 		<< " Drift_X=" << drift_dist 
+	// // 		<< " Edge_Length=" << edge_len 
+	// // 		<< " Home_K=" << k_home << std::endl;
+
+
 
 	// Update node positions
     for (int i = 0; i < Np; ++i) {
@@ -508,27 +624,41 @@ void setup_tissue( void )
 	int num_ep = parameters.ints("number_EP_cells");
 
 	boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
-	std::cout << "Test" << std::endl; 
-	// generate_boundary_cells(a, b, amp, freq);
+	double ep_dis = parameters.doubles("ep_displacement");
+	generate_boundary_cells(a, b, amp, freq, "Epithelial", ep_dis, num_ep);
+
+	int num_caf = parameters.ints("number_CAF_cells");
+	// Cell_Definition* Caf_def = cell_definitions_by_index[2];
+	// Cell* Caf = create_cell( *Caf_def );
+	// Caf->assign_position( { 225,200, 0.0 } );
+
+	double CAFx = parameters.doubles("CAFx");
+	double CAFy = parameters.doubles("CAFy");
+
+	double EPx = parameters.doubles("EPx");
+	double EPy = parameters.doubles("EPy");
+
+	double CAF_rad = parameters.doubles("CAF_rad");
+	double EP_rad = parameters.doubles("EP_rad");
+
+	generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf);
+	
+	// _____________ TESTING Membrane Elasticity and Restoring Force __________________
+
+	// boundary_membrane_pts.push_back({0.0, 50, 0.0}); 
+	// boundary_membrane_pts.push_back({0.0, -50, 0.0});
+
+	// int Np = (int)boundary_membrane_pts.size(); // Should be 2
+	// std::cout << "Initial Boundary Points: " << Np << std::endl;
+	// initial_edge_length.resize(Np);
+	// initial_node_positions.resize(Np);
 
 	// int num_caf = parameters.ints("number_CAF_cells");
-	// // Cell_Definition* Caf_def = cell_definitions_by_index[2];
-	// // Cell* Caf = create_cell( *Caf_def );
-	// // Caf->assign_position( { 225,200, 0.0 } );
+	// Cell_Definition* Caf_def = cell_definitions_by_index[2];
+	// Cell* Caf = create_cell( *Caf_def );
+	// Caf->assign_position( { 225,200, 0.0 } );
 
-	// double CAFx = parameters.doubles("CAFx");
-	// double CAFy = parameters.doubles("CAFy");
-
-	// double EPx = parameters.doubles("EPx");
-	// double EPy = parameters.doubles("EPy");
-
-	// double CAF_rad = parameters.doubles("CAF_rad");
-	// double EP_rad = parameters.doubles("EP_rad");
-
-	// clustered_cell(a, b, amp, freq, num_caf, CAFx, CAFy, CAF_rad, "CAF");
-	// clustered_cell(a, b, amp, freq, num_ep, EPx, EPy, EP_rad, "CAF");
-
-
+	
 	// ##################
 
 	// Example Code for generating a circle boundary

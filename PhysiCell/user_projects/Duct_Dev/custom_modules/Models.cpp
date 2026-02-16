@@ -217,3 +217,111 @@ void initialize_level_set_duct(std::vector<std::vector<double>> boundary_membran
 	}
 	std::cout << "Level set function initialized!!!" << std::endl;
 }
+// Build Gaussian weights centered at projection point and distribute force 
+void BM_Smoothing(std::vector<std::pair<double,double>>& node_forces, double Fx_BM, double Fy_BM, int best_k, double best_px, double best_py, double best_t){
+
+		int Np = (int)boundary_membrane_pts.size();
+        double sumW = 0.0;
+		double sigma = parameters.doubles("membrane_force_smoothing_sigma"); // Smoothing parameter for Gaussian distribution
+		double cutoff = 3.0 * sigma;         // ignore nodes beyond 3 sigma 
+    
+        std::vector<int> nearby_indices;   // Try storing per-node weights only for nodes within cutoff
+        std::vector<double> nearby_weights;
+        nearby_indices.reserve(16);
+        nearby_weights.reserve(16);
+
+		if (sigma <= 0 || std::isnan(sigma)){
+
+			// Revert to the original 2-node split based on projection t.
+            int n1 = best_k;
+            int n2 = (best_k + 1) % Np;
+            double t_clamped = std::max(0.0, std::min(best_t, 1.0));
+            node_forces[n1].first  += (1.0 - t_clamped) * Fx_BM;
+            node_forces[n1].second += (1.0 - t_clamped) * Fy_BM;
+            node_forces[n2].first  += (t_clamped) * Fx_BM;
+            node_forces[n2].second += (t_clamped) * Fy_BM;	
+			
+		}
+
+		else{
+			// Checking if neighboring nodes are close enough to the projection point
+			for (int i = 0; i < Np; i++) {
+				double dx = boundary_membrane_pts[i][0] - best_px;
+				double dy = boundary_membrane_pts[i][1] - best_py;
+				double dist2 = dx*dx + dy*dy;
+				if (dist2 > cutoff*cutoff ) continue; // ignore distant nodes
+				double w = exp(-dist2 / (2.0 * sigma * sigma));   // -d^2 / (2 * sigma^2)
+				// if (w <= 0.0) continue;
+
+				nearby_indices.push_back(i); // Store index & weight of nearby node 
+				nearby_weights.push_back(w);
+				sumW += w;
+			}
+
+            // normalize weights and distribute
+            for (size_t idx = 0; idx < nearby_indices.size(); ++idx) {
+                int node_i = nearby_indices[idx];
+                double w = nearby_weights[idx];
+                double frac = w / sumW;
+                node_forces[node_i].first  += Fx_BM * frac;
+                node_forces[node_i].second += Fy_BM * frac;
+            }
+        }
+    } 
+
+// --- 2. Elasticity: Nonlinear Fung Spring ---
+void membrane_elasticity(std::vector<std::pair<double,double>>& node_forces)
+{
+    if (parameters.doubles("elastic_BM") != 1.0) return;
+
+    int Np = (int)boundary_membrane_pts.size();
+    double k = parameters.doubles("elastic_constant");
+    double alpha = parameters.doubles("stiffen_alpha");
+    double max_force = 100.0; 
+
+    for(int i=0; i<Np; ++i){
+        int j = (i + 1) % Np;
+
+        double dx = boundary_membrane_pts[j][0] - boundary_membrane_pts[i][0];
+        double dy = boundary_membrane_pts[j][1] - boundary_membrane_pts[i][1];
+
+        double current_length = sqrt(dx*dx + dy*dy);
+        double rest_length = initial_edge_length[i];
+        if (current_length <= 1e-12) continue;
+
+        double x = current_length - rest_length;
+        double F_mag = k * (std::exp(alpha * x) - 1.0);
+        
+        if(F_mag > max_force) F_mag = max_force;
+        if(F_mag < -max_force) F_mag = -max_force;
+
+        double nx = dx / current_length;
+        double ny = dy / current_length;
+
+        node_forces[i].first  += F_mag * nx;
+        node_forces[i].second += F_mag * ny;
+        node_forces[j].first  -= F_mag * nx;
+        node_forces[j].second -= F_mag * ny;
+    }
+}
+
+// --- 3. Restoring Force: Return to Home ---
+void membrane_restoring_force(std::vector<std::pair<double,double>>& node_forces)
+{
+    double home_rate = parameters.doubles("home_restoring_rate");
+    if (home_rate <= 0.0) return;
+
+    int Np = (int)boundary_membrane_pts.size();
+    for(int i=0; i<Np; ++i){
+        double home_x = initial_node_positions[i][0];
+        double home_y = initial_node_positions[i][1];
+        double current_x = boundary_membrane_pts[i][0];
+        double current_y = boundary_membrane_pts[i][1];
+
+        double dx = home_x - current_x;
+        double dy = home_y - current_y;
+
+        node_forces[i].first  += home_rate * dx;
+        node_forces[i].second += home_rate * dy;
+    }
+}

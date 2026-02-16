@@ -199,7 +199,7 @@ std::vector<std::vector<double>> generate_boundary_shape(double a, double b, dou
 }
 
 // Generating points for a deformed ellipse like shape
-void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells, int prof_on){
+void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells){
 	
 	Cell_Definition* pBM_def = cell_definitions_by_name[type];   //cell_definitions_by_name[ type_name ] = pCD; 
 	;
@@ -232,7 +232,7 @@ void generate_boundary_cells(double a, double b, double amp, int freq, std::stri
 		
 		if (i==0){
 
-			if (type =="Epithelial" && prof_on == 1){
+			if (type =="Epithelial"){
 				std::cout << "Setting first cell to proliferate" << std::endl;
 				pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
 			}
