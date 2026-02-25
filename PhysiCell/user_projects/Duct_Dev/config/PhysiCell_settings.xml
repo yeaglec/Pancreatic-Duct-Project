@@ -14,7 +14,7 @@
     </domain>
 
     <overall>
-        <max_time units="min">2500</max_time>
+        <max_time units="min">3500</max_time>
         <time_units>min</time_units>
         <space_units>micron</space_units>
         <dt_diffusion units="min">0.01</dt_diffusion>
@@ -564,10 +564,11 @@
         <EPy type="double" units="micron" description="y position of the first epithelial cell">200</EPy>
         <CAF_rad type="double" units="micron" description="radius of the clustered cells">20</CAF_rad>
         <EP_rad type="double" units="micron" description="radius of the first epithelial cell">40</EP_rad>
-        <elastic_BM type="double" units="1/min" description="elastic adhesion rate">0</elastic_BM>
-        <elastic_constant type="double" units="1/min" description="membrane elastic constant">1</elastic_constant>
-        <stiffen_alpha type="double" units="1/min" description="stiffening alpha parameter">1</stiffen_alpha>
+        <Segment_Elasticity type="double" units="1/min" description="0-no segment force, 1-elastic segment force">0</Segment_Elasticity>
+        <seg_lin type="double" units="1/min" description="segment linear parament">.001</seg_lin>
+        <seg_exp type="double" units="1/min" description="segment exponential parameter">.2</seg_exp>
         <test_pull_force type="double" units="micron/min" description="test pull force">0</test_pull_force>
-        <home_restoring_rate type="double" units="micron/min" description="home restoring rate">.0025</home_restoring_rate>
+        <home_lin type="double" units="micron/min" description="home restoring linear force">.00001</home_lin>
+        <home_exp type="double" units="none" description="home restoring exponential force">.15</home_exp>
     </user_parameters>
 </PhysiCell_settings>

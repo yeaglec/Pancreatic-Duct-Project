@@ -269,14 +269,14 @@ void BM_Smoothing(std::vector<std::pair<double,double>>& node_forces, double Fx_
         }
     } 
 
-// --- 2. Elasticity: Nonlinear Fung Spring ---
+// Segment Elasticity: Add spring forces between adjacent nodes to maintain membrane integrity
 void membrane_elasticity(std::vector<std::pair<double,double>>& node_forces)
 {
-    if (parameters.doubles("elastic_BM") != 1.0) return;
+    if (parameters.doubles("Segment_Elasticity") != 1.0) return;
 
     int Np = (int)boundary_membrane_pts.size();
-    double k = parameters.doubles("elastic_constant");
-    double alpha = parameters.doubles("stiffen_alpha");
+    double k = parameters.doubles("seg_lin");
+    double alpha = parameters.doubles("seg_exp");
     double max_force = 100.0; 
 
     for(int i=0; i<Np; ++i){
@@ -305,11 +305,12 @@ void membrane_elasticity(std::vector<std::pair<double,double>>& node_forces)
     }
 }
 
-// --- 3. Restoring Force: Return to Home ---
+// Restoring Force: Force enforcing global structure of membrane
 void membrane_restoring_force(std::vector<std::pair<double,double>>& node_forces)
 {
-    double home_rate = parameters.doubles("home_restoring_rate");
-    if (home_rate <= 0.0) return;
+    double home_lin = parameters.doubles("home_lin");
+	double home_exp = parameters.doubles("home_exp");
+    if (home_lin <= 0.0) return;
 
     int Np = (int)boundary_membrane_pts.size();
     for(int i=0; i<Np; ++i){
@@ -321,7 +322,15 @@ void membrane_restoring_force(std::vector<std::pair<double,double>>& node_forces
         double dx = home_x - current_x;
         double dy = home_y - current_y;
 
-        node_forces[i].first  += home_rate * dx;
-        node_forces[i].second += home_rate * dy;
+		double disp = sqrt(dx*dx + dy*dy);
+		if (disp < 1e-12) continue;
+
+		double F_mag = home_lin * (std::exp(home_exp * disp) - 1.0);
+
+		// std::cout << "Node Forces: " << node_forces[2].second << std::endl;
+		// std::cout << "Resotring Force Mag: " << F_mag << std::endl; 
+
+        node_forces[i].first  += F_mag * (dx / disp);
+        node_forces[i].second += F_mag * (dy / disp);
     }
 }

@@ -68,6 +68,7 @@
 #include "./custom.h"
 #include "./Models.h"
 #include "./Utils.h"
+#include "./Tests.h"
 #include <cmath>
 #include <cfloat>
 #include <array>
@@ -75,6 +76,8 @@
 std::vector<std::vector<double>> boundary_membrane_pts;
 std::vector<double> initial_edge_length; 
 std::vector<std::vector<double>> initial_node_positions; 
+
+void (*test_perb)(std::vector<std::pair<double,double>>&, double) = nullptr;
 
 
 // ______________________________________________________________________________________________________________________
@@ -261,7 +264,7 @@ void update_basement_membrane_deformation2(double dt)
 
         if (Fx_cell == 0.0 && Fy_cell == 0.0) continue;
 
-        double Fx_BM = -Fx_cell;   // The velocity is being applied to the voxel center for all the boundary nodes (TODO: FIx)
+        double Fx_BM = -Fx_cell;   
         double Fy_BM = -Fy_cell;
 
         // Computing the projection of a cell onto the BM TODO: Make helper for proj code
@@ -279,6 +282,13 @@ void update_basement_membrane_deformation2(double dt)
 
 	// Establishing membrane "memory" or "home" force, keeping the membrane from deforming inwards too much
 	membrane_restoring_force(node_forces);
+
+    ///_________
+    // Put Membrane Test Functions Here
+
+    if (test_perb != nullptr){
+        test_perb(node_forces, PhysiCell_globals.current_time);
+    }
 
 	// Update node positions
     for (int i = 0; i < Np; ++i) {
@@ -463,31 +473,43 @@ void setup_tissue( void )
 
 	// Example code for generating a arbitrary boundary
 
-	int num_points = parameters.ints("membrane_num_points");
-	double a = 300.0, b = 250.0;
-	double amp = 0.1;              // Amplitude of deformation
-	int freq = 4;  
-	int num_ep = parameters.ints("number_EP_cells");
+	// int num_points = parameters.ints("membrane_num_points");
+	// double a = 300.0, b = 250.0;
+	// double amp = 0.1;              // Amplitude of deformation
+	// int freq = 4;  
+	// int num_ep = parameters.ints("number_EP_cells");
 
-	boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
-	double ep_dis = parameters.doubles("ep_displacement");
-	generate_boundary_cells(a, b, amp, freq, "Epithelial", ep_dis, num_ep);
+	// boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
+	// double ep_dis = parameters.doubles("ep_displacement");
+	// generate_boundary_cells(a, b, amp, freq, "Epithelial", ep_dis, num_ep);
+
+	// int num_caf = parameters.ints("number_CAF_cells");
+	// // Cell_Definition* Caf_def = cell_definitions_by_index[2];
+	// // Cell* Caf = create_cell( *Caf_def );
+	// // Caf->assign_position( { 225,200, 0.0 } );
+
+	// double CAFx = parameters.doubles("CAFx");
+	// double CAFy = parameters.doubles("CAFy");
+
+	// double EPx = parameters.doubles("EPx");
+	// double EPy = parameters.doubles("EPy");
+
+	// double CAF_rad = parameters.doubles("CAF_rad");
+	// double EP_rad = parameters.doubles("EP_rad");
+ß
+	// generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf);
+
+    // _____________ TESTING  Triangle Membrane Elasticity and Restoring Force __________________
 
 	int num_caf = parameters.ints("number_CAF_cells");
-	// Cell_Definition* Caf_def = cell_definitions_by_index[2];
-	// Cell* Caf = create_cell( *Caf_def );
-	// Caf->assign_position( { 225,200, 0.0 } );
+	Cell_Definition* Caf_def = cell_definitions_by_index[2];  // Need at least 1 cell or sim gets mad
+	Cell* Caf = create_cell( *Caf_def );
+	Caf->assign_position( { 225,200, 0.0 } );
 
-	double CAFx = parameters.doubles("CAFx");
-	double CAFy = parameters.doubles("CAFy");
+    // Put Test Functions Here
+    Test_Ring();
+    test_perb = nullptr;  //nullptr if not testing
 
-	double EPx = parameters.doubles("EPx");
-	double EPy = parameters.doubles("EPy");
-
-	double CAF_rad = parameters.doubles("CAF_rad");
-	double EP_rad = parameters.doubles("EP_rad");
-
-	generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf);
 	
 	// _____________ TESTING Membrane Elasticity and Restoring Force __________________
 
