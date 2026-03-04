@@ -14,7 +14,7 @@
     </domain>
 
     <overall>
-        <max_time units="min">3500</max_time>
+        <max_time units="min">10000</max_time>
         <time_units>min</time_units>
         <space_units>micron</space_units>
         <dt_diffusion units="min">0.01</dt_diffusion>
@@ -540,14 +540,14 @@
     <user_parameters>
         <number_of_cells type="int" units="none" description="initial number of cells (for each cell type)">0</number_of_cells>
         <membrane_interaction_length type="double" units="micron" description="cell membrane interaction length">500</membrane_interaction_length>
-        <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">.005</membrane_adhesion_strength>
-        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">.005</membrane_spring_constant>
-        <membrane_num_points type="int" units="none" description="number of points for the membrane shape">175</membrane_num_points>
+        <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">.00075</membrane_adhesion_strength>
+        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">.00075</membrane_spring_constant>
+        <membrane_num_points type="int" units="none" description="number of points for the membrane shape">350</membrane_num_points>
         <ep_displacement type="double" units="micron" description="epithelial cell displacement">10</ep_displacement>
         <membrane_deadzone type="double" units="micron/min" description="deadzone for the membrane spring force">5</membrane_deadzone>
         <cell_deadzone type="double" units="micron/min" description="deadzone for the cell spring force">5</cell_deadzone>
-        <membrane_force_smoothing_sigma type="double" units="micron" description="sigma for the membrane force smoothing">25</membrane_force_smoothing_sigma>
-        <proliferation_exit_rate type="double" units="1/min" description="exit rate for proliferation">.002</proliferation_exit_rate>
+        <membrane_force_smoothing_sigma type="double" units="micron" description="sigma for the membrane force smoothing">50</membrane_force_smoothing_sigma>
+        <proliferation_exit_rate type="double" units="1/min" description="exit rate for proliferation">.00072</proliferation_exit_rate>
         <membrane_correction_rate type="double" units="micron/min" description="membrane repulsion strength">1</membrane_correction_rate>
         <___tests___ type="double" units="none" description="test parameter">0</___tests___>
         <x type="double" units="micron" description="x position of the first epithelial cell">50</x>
@@ -565,10 +565,10 @@
         <CAF_rad type="double" units="micron" description="radius of the clustered cells">20</CAF_rad>
         <EP_rad type="double" units="micron" description="radius of the first epithelial cell">40</EP_rad>
         <Segment_Elasticity type="double" units="1/min" description="0-no segment force, 1-elastic segment force">0</Segment_Elasticity>
-        <seg_lin type="double" units="1/min" description="segment linear parament">.001</seg_lin>
-        <seg_exp type="double" units="1/min" description="segment exponential parameter">.2</seg_exp>
+        <seg_lin type="double" units="1/min" description="segment linear parament">.1</seg_lin>
+        <seg_exp type="double" units="1/min" description="segment exponential parameter">.15</seg_exp>
         <test_pull_force type="double" units="micron/min" description="test pull force">0</test_pull_force>
-        <home_lin type="double" units="micron/min" description="home restoring linear force">.00001</home_lin>
-        <home_exp type="double" units="none" description="home restoring exponential force">.15</home_exp>
+        <home_lin type="double" units="micron/min" description="home restoring linear force">.0001</home_lin>
+        <home_exp type="double" units="none" description="home restoring exponential force">.05</home_exp>
     </user_parameters>
 </PhysiCell_settings>
