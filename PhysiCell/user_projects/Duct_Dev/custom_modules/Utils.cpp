@@ -202,7 +202,7 @@ std::vector<std::vector<double>> generate_boundary_shape(double a, double b, dou
 void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells){
 	
 	Cell_Definition* pBM_def = cell_definitions_by_name[type];   //cell_definitions_by_name[ type_name ] = pCD; 
-	;
+	
 
     for (int i = 0; i < num_cells; i++) {
         
@@ -222,27 +222,27 @@ void generate_boundary_cells(double a, double b, double amp, int freq, std::stri
 		double xi = x - dis * nx;
 		double yi = y - dis * ny;
 
-		Cell* pC = create_cell( *pBM_def );
-		if( parameters.ints("number_EP_cells") > 1 ){
-			pC->assign_position( { xi, yi, 0.0 } );
+		Cell_Definition* pTumorDef = cell_definitions_by_name["CAF"];
+		if (!pTumorDef) {
+		std::cerr << "Error: Tumor cell definition not found!" << std::endl;
+		continue;
 		}
-		else{
-			pC->assign_position( { parameters.doubles("x"), parameters.doubles("y"), 0.0 } );
-		}
-		
-		if (i==0){
+		std::cout << "Tumor cell definition found!" << std::endl;	
 
-			if (type =="Epithelial"){
-				std::cout << "Setting first cell to proliferate" << std::endl;
-				pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
-			}
-			
-			else{ 
-				pC->phenotype.cycle.data.exit_rate(0) = 0;
-			}
-		}
+		Cell* pC = nullptr;
+		std::cout << "Nullptr declared" << std::endl;	
+		if(i==0) pC = create_cell(*pTumorDef );
+		else pC = create_cell( *pBM_def );
+		std::cout << "Cell created" << std::endl;	
+
+		// Cell* pC = create_cell( *pBM_def );
 		
+		if (parameters.ints("number_EP_cells") == 1) pC->assign_position( { parameters.doubles("x"), parameters.doubles("y"), 0.0 } );
+		else pC->assign_position( {xi, yi, 0.0 } );
 		
+		if(i==0)pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
+
+	
 	}
 }
 

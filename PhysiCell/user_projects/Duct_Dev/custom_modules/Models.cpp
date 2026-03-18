@@ -244,33 +244,59 @@ void BM_Smoothing(std::vector<std::pair<double,double>>& node_forces, double Fx_
 		}
 
 		else{
-			// Checking if neighboring nodes are close enough to the projection point
-			for (int i = 0; i < Np; i++) {
-				double dx = boundary_membrane_pts[i][0] - best_px;
-				double dy = boundary_membrane_pts[i][1] - best_py;
-				double dist2 = dx*dx + dy*dy;
-				if (dist2 > cutoff*cutoff ) continue; // ignore distant nodes
-				double w = exp(-dist2 / (2.0 * sigma * sigma));   // -d^2 / (2 * sigma^2)
-				// if (w <= 0.0) continue;
-
-				nearby_indices.push_back(i); // Store index & weight of nearby node 
+			// Start at best_k and go "left" (decreasing indices)
+			for (int step = 0; step < Np; ++step) {
+				int node_i = (best_k - step % Np + Np) % Np;
+				double dx = boundary_membrane_pts[node_i][0] - best_px;
+				double dy = boundary_membrane_pts[node_i][1] - best_py;
+				double dist2 = dx * dx + dy * dy;
+				if (dist2 > cutoff * cutoff) break; 
+				
+				double w = exp(-dist2 / (2.0 * sigma * sigma));
+				nearby_indices.push_back(node_i);
+				nearby_weights.push_back(w);
+				sumW += w;
+			}
+			
+			int num_left = nearby_indices.size();
+			// Start at best_k + 1 and go "right" (increasing indices)
+			for (int step = 1; step <= Np - num_left; ++step) {
+				int node_i = (best_k + step) % Np;
+				double dx = boundary_membrane_pts[node_i][0] - best_px;
+				double dy = boundary_membrane_pts[node_i][1] - best_py;
+				double dist2 = dx * dx + dy * dy;
+				if (dist2 > cutoff * cutoff) break; 
+				
+				double w = exp(-dist2 / (2.0 * sigma * sigma));
+				nearby_indices.push_back(node_i);
 				nearby_weights.push_back(w);
 				sumW += w;
 			}
 
-            // normalize weights and distribute
-            for (size_t idx = 0; idx < nearby_indices.size(); ++idx) {
-                int node_i = nearby_indices[idx];
-                double w = nearby_weights[idx];
-                double frac = w / sumW;
-                node_forces[node_i].first  += Fx_BM * frac;
-                node_forces[node_i].second += Fy_BM * frac;
-            }
+			if (sumW > 0.0) {
+				// normalize weights and distribute
+				for (size_t idx = 0; idx < nearby_indices.size(); ++idx) {
+					int node_i = nearby_indices[idx];
+					double w = nearby_weights[idx];
+					double frac = w / sumW;
+					node_forces[node_i].first  += Fx_BM * frac;
+					node_forces[node_i].second += Fy_BM * frac;
+				}
+			} else {
+				// Fallback to 2-node split if no nodes were within cutoff
+				int n1 = best_k;
+				int n2 = (best_k + 1) % Np;
+				double t_clamped = std::max(0.0, std::min(best_t, 1.0));
+				node_forces[n1].first  += (1.0 - t_clamped) * Fx_BM;
+				node_forces[n1].second += (1.0 - t_clamped) * Fy_BM;
+				node_forces[n2].first  += (t_clamped) * Fx_BM;
+				node_forces[n2].second += (t_clamped) * Fy_BM;	
+			}
         }
     } 
 
 // Segment Elasticity: Add spring forces between adjacent nodes to maintain membrane integrity
-void membrane_elasticity(std::vector<std::pair<double,double>>& node_forces)
+void membrane_strain_lin(std::vector<std::pair<double,double>>& node_forces)    
 {
     if (parameters.doubles("Segment_Elasticity") != 1.0) return;
 
@@ -287,13 +313,49 @@ void membrane_elasticity(std::vector<std::pair<double,double>>& node_forces)
 
         double current_length = sqrt(dx*dx + dy*dy);
         double rest_length = initial_edge_length[i];
-        if (current_length <= 1e-12) continue;
+        if (current_length <= 1e-16) continue;         //physicell standard is 1e-16
 
         double x = current_length - rest_length;
-        double F_mag = k * (std::exp(alpha * x) - 1.0);
+        double F_mag = k * x;        // parameterize linear and exponetial cases 
         
-        if(F_mag > max_force) F_mag = max_force;
-        if(F_mag < -max_force) F_mag = -max_force;
+        // if(F_mag > max_force) F_mag = max_force;
+        // if(F_mag < -max_force) F_mag = -max_force;
+
+        double nx = dx / current_length;
+        double ny = dy / current_length;
+
+        node_forces[i].first  += F_mag * nx;
+        node_forces[i].second += F_mag * ny;
+        node_forces[j].first  -= F_mag * nx;
+        node_forces[j].second -= F_mag * ny;
+    }
+}
+
+// Segment Elasticity: Add spring forces between adjacent nodes to maintain membrane integrity
+void membrane_strain_exp(std::vector<std::pair<double,double>>& node_forces)    
+{
+    if (parameters.doubles("Segment_Elasticity") != 1.0) return;
+
+    int Np = (int)boundary_membrane_pts.size();
+    double k = parameters.doubles("seg_lin");
+    double alpha = parameters.doubles("seg_exp");
+    double max_force = 100.0; 
+
+    for(int i=0; i<Np; ++i){
+        int j = (i + 1) % Np;
+
+        double dx = boundary_membrane_pts[j][0] - boundary_membrane_pts[i][0];
+        double dy = boundary_membrane_pts[j][1] - boundary_membrane_pts[i][1];
+
+        double current_length = sqrt(dx*dx + dy*dy);
+        double rest_length = initial_edge_length[i];
+        if (current_length <= 1e-16) continue;         //physicell standard is 1e-16
+
+        double x = current_length - rest_length;
+        double F_mag = k * (std::exp(alpha * x) - 1.0);        // parameterize linear and exponetial cases 
+        
+        // if(F_mag > max_force) F_mag = max_force;
+        // if(F_mag < -max_force) F_mag = -max_force;
 
         double nx = dx / current_length;
         double ny = dy / current_length;
@@ -306,7 +368,7 @@ void membrane_elasticity(std::vector<std::pair<double,double>>& node_forces)
 }
 
 // Restoring Force: Force enforcing global structure of membrane
-void membrane_restoring_force(std::vector<std::pair<double,double>>& node_forces)
+void membrane_restoring_force_lin(std::vector<std::pair<double,double>>& node_forces)
 {
     double home_lin = parameters.doubles("home_lin");
 	double home_exp = parameters.doubles("home_exp");
@@ -316,14 +378,44 @@ void membrane_restoring_force(std::vector<std::pair<double,double>>& node_forces
     for(int i=0; i<Np; ++i){
         double home_x = initial_node_positions[i][0];
         double home_y = initial_node_positions[i][1];
-        double current_x = boundary_membrane_pts[i][0];
+        double current_x = boundary_membrane_pts[i][0];      
         double current_y = boundary_membrane_pts[i][1];
 
         double dx = home_x - current_x;
         double dy = home_y - current_y;
 
 		double disp = sqrt(dx*dx + dy*dy);
-		if (disp < 1e-12) continue;
+		if (disp < 1e-16) continue;
+
+		double F_mag = home_lin * disp;                                        // parameterize linear and exponetial cases 
+
+		// double F_mag = home_lin * (std::exp(home_exp * disp) - 1.0);
+
+		// std::cout << "Node Forces: " << node_forces[2].second << std::endl;
+		// std::cout << "Resotring Force Mag: " << F_mag << std::endl; 
+
+        node_forces[i].first  += F_mag * (dx / disp);
+        node_forces[i].second += F_mag * (dy / disp);
+    }
+}
+void membrane_restoring_force_exp(std::vector<std::pair<double,double>>& node_forces)
+{
+    double home_lin = parameters.doubles("home_lin");
+	double home_exp = parameters.doubles("home_exp");
+    if (home_lin <= 0.0) return;
+
+    int Np = (int)boundary_membrane_pts.size();
+    for(int i=0; i<Np; ++i){
+        double home_x = initial_node_positions[i][0];
+        double home_y = initial_node_positions[i][1];
+        double current_x = boundary_membrane_pts[i][0];      
+        double current_y = boundary_membrane_pts[i][1];
+
+        double dx = home_x - current_x;
+        double dy = home_y - current_y;
+
+		double disp = sqrt(dx*dx + dy*dy);
+		if (disp < 1e-16) continue;
 
 		double F_mag = home_lin * (std::exp(home_exp * disp) - 1.0);
 

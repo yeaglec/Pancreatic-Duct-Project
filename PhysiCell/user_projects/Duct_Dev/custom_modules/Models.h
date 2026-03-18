@@ -22,8 +22,11 @@ void update_basement_membrane_deformation(double dt);
 void initialize_level_set_duct(std::vector<std::vector<double>> boundary_membrane_pts);
 
 // 2. The other physics modules
-void membrane_elasticity(std::vector<std::pair<double,double>>& node_forces);
-void membrane_restoring_force(std::vector<std::pair<double,double>>& node_forces);
+void membrane_strain_lin(std::vector<std::pair<double,double>>& node_forces);
+void membrane_strain_exp(std::vector<std::pair<double,double>>& node_forces);
+
+void membrane_restoring_force_lin(std::vector<std::pair<double,double>>& node_forces);
+void membrane_restoring_force_exp(std::vector<std::pair<double,double>>& node_forces);
 void BM_Smoothing(std::vector<std::pair<double,double>>& node_forces, double Fx_BM, double Fy_BM, int best_k, double best_px, double best_py, double best_t);
 
 

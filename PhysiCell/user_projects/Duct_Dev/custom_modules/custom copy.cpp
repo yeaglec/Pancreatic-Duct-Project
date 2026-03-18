@@ -68,6 +68,7 @@
 #include "./custom.h"
 #include "./Models.h"
 #include "./Utils.h"
+#include "./Tests.h"
 #include <cmath>
 #include <cfloat>
 #include <array>
@@ -76,6 +77,8 @@ std::vector<std::vector<double>> boundary_membrane_pts;
 std::vector<double> initial_edge_length; 
 std::vector<std::vector<double>> initial_node_positions; 
 
+void (*test_perb)(std::vector<std::pair<double,double>>&, double) = nullptr;
+
 
 // ______________________________________________________________________________________________________________________
 //_________________________________________________________________________________________________________________________
@@ -83,7 +86,7 @@ std::vector<std::vector<double>> initial_node_positions;
 // ________________________________________________________________________________________________________________________
 
 // ################ Function that computes the BM-to-Cell force ####################
-std::pair<double,double> basement_membrane_interactions_cc(Cell* pCell)
+std::pair<double,double> basement_membrane_interactions_cc(Cell* pCell)                 //REFACTOR TO INCLUDE BM INT AND CELL INT IN ONE FUNCTION
 {
     double cell_x = pCell->position[0];
     double cell_y = pCell->position[1];
@@ -103,6 +106,9 @@ std::pair<double,double> basement_membrane_interactions_cc(Cell* pCell)
     double BM_deadzone = parameters.doubles("membrane_deadzone");
     if (fabs(de) < BM_deadzone) return {0.0, 0.0};
 
+    double L = parameters.doubles("membrane_interaction_length");
+    if (fabs(de) >= L) return {0,0};
+
     double strength = parameters.doubles("membrane_spring_constant"); 
     double mag = strength * fabs(de);  // Hooke's law, F = kx
 
@@ -110,11 +116,7 @@ std::pair<double,double> basement_membrane_interactions_cc(Cell* pCell)
     double ny = py - cell_y;
     double norm = sqrt(nx * nx + ny * ny);
 	
-    if (norm > 0)
-    {
-        nx /= norm;
-        ny /= norm;
-    }
+    if (norm > 0) { nx /= norm; ny /= norm; }
 
 	// mag = parameters.doubles("test_velocity_magnitude");
     double Fx =  mag * nx;  // Force components: Hookean force applied in the normal direction
@@ -199,7 +201,7 @@ void cell_interactions_cc(Cell* pCell,
     // --- CAF: treat de < 0 as penetration (they were outside originally) ---
     if (isCAF)
     {
-        if (de < 0)
+        if (de >0)
         {
             double cell_deadzone = parameters.doubles("cell_deadzone");
             double displacement_needed = fabs(de) + cell_deadzone; // move out to deadzone
@@ -251,15 +253,10 @@ void cell_interactions_cc(Cell* pCell,
     return;
 }
 
-
-
 void update_basement_membrane_deformation2(double dt)
 {
     int Np = (int)boundary_membrane_pts.size();
     std::vector<std::pair<double,double>> node_forces(Np, {0.0, 0.0});
-
-    double sigma = parameters.doubles("membrane_force_smoothing_sigma"); // Smoothing parameter for Gaussian distribution
-	double cutoff = 3.0 * sigma;         // ignore nodes beyond 3 sigma 
 
     // Iterate over all cells and compute membrane forces distributed by Gaussian
     for (Cell* pCell : *all_cells) {
@@ -270,7 +267,7 @@ void update_basement_membrane_deformation2(double dt)
 
         if (Fx_cell == 0.0 && Fy_cell == 0.0) continue;
 
-        double Fx_BM = -Fx_cell;   // The velocity is being applied to the voxel center for all the boundary nodes (TODO: FIx)
+        double Fx_BM = -Fx_cell;   
         double Fy_BM = -Fy_cell;
 
         // Computing the projection of a cell onto the BM TODO: Make helper for proj code
@@ -280,159 +277,23 @@ void update_basement_membrane_deformation2(double dt)
         auto [best_dist, best_px, best_py, best_k_d, best_t] = project_point_onto_boundary(cell_x, cell_y);
 		int best_k = static_cast<int>(std::round(best_k_d));
 
-		// ###############################################
-        // Build Gaussian weights centered at projection point and distribute force (TODO make helper function for this)
-        double sumW = 0.0;
-    
-        std::vector<int> nearby_indices;   // Try storing per-node weights only for nodes within cutoff
-        std::vector<double> nearby_weights;
-        nearby_indices.reserve(16);
-        nearby_weights.reserve(16);
-
-		if (sigma <= 0 || std::isnan(sigma)){
-
-			// Revert to the original 2-node split based on projection t.
-            int n1 = best_k;
-            int n2 = (best_k + 1) % Np;
-            double t_clamped = std::max(0.0, std::min(best_t, 1.0));
-            node_forces[n1].first  += (1.0 - t_clamped) * Fx_BM;
-            node_forces[n1].second += (1.0 - t_clamped) * Fy_BM;
-            node_forces[n2].first  += (t_clamped) * Fx_BM;
-            node_forces[n2].second += (t_clamped) * Fy_BM;	
-			
-		}
-
-		else{
-			// Checking if neighboring nodes are close enough to the projection point
-			for (int i = 0; i < Np; i++) {
-				double dx = boundary_membrane_pts[i][0] - best_px;
-				double dy = boundary_membrane_pts[i][1] - best_py;
-				double dist2 = dx*dx + dy*dy;
-				if (dist2 > cutoff*cutoff ) continue; // ignore distant nodes
-				double w = exp(-dist2 / (2.0 * sigma * sigma));   // -d^2 / (2 * sigma^2)
-				// if (w <= 0.0) continue;
-
-				nearby_indices.push_back(i); // Store index & weight of nearby node 
-				nearby_weights.push_back(w);
-				sumW += w;
-			}
-
-            // normalize weights and distribute
-            for (size_t idx = 0; idx < nearby_indices.size(); ++idx) {
-                int node_i = nearby_indices[idx];
-                double w = nearby_weights[idx];
-                double frac = w / sumW;
-                node_forces[node_i].first  += Fx_BM * frac;
-                node_forces[node_i].second += Fy_BM * frac;
-            }
-        }
-    } 
-
-	// ##############################################
-	// Nonlinear/Fung membrane elasticity 
-
-	// Material parameters given in Li et al. 
-	double G = 82.30;    // low-strain elastic modulus 
-	double b = 2.10;    // High-strain stiffening parameter
-
-	if (parameters.doubles("elastic_BM")==1.0){ 
-		double k = parameters.doubles("elastic_constant");
-		double alpha = parameters.doubles("stiffen_alpha");
-
-		for(int i=0; i<Np; ++i){
-			int j = (i + 1) % Np;
-
-			double dx = boundary_membrane_pts[j][0] - boundary_membrane_pts[i][0];
-			double dy = boundary_membrane_pts[j][1] - boundary_membrane_pts[i][1];
-
-			double current_length = sqrt(dx*dx + dy*dy);
-			double rest_length = initial_edge_length[i];
-			if (current_length <= 1e-12) continue;
-
-			// displacement (stretch)
-			double x = current_length - rest_length;
-
-			// Calculate Magnitude: F = k * (exp(alpha * x) - 1)
-			// Note: If x is negative (compressed), F becomes negative, pushing nodes apart.
-			double F_mag = k * (std::exp(alpha * x) - 1.0);
-			
-			// Cap the force to help with blowups
-			double max_force = 100.0; 
-			if(F_mag > max_force) F_mag = max_force;
-			if(F_mag < -max_force) F_mag = -max_force;
-
-			// Force Updates
-			double nx = dx / current_length;
-			double ny = dy / current_length;
-
-			node_forces[i].first  += F_mag * nx;
-			node_forces[i].second += F_mag * ny;
-
-			node_forces[j].first  -= F_mag * nx;
-			node_forces[j].second -= F_mag * ny;
-
-			// std::cout << "Exponential Force Applied!!!!: " << F_mag << std::endl;
-			
-		}
+		BM_Smoothing(node_forces, Fx_BM, Fy_BM, best_k, best_px, best_py, best_t);
 	}
 
-	// ##############################################
-	// Trying Restoring for for home positions
+	// Enforcing membrane elasticity between node pairs
+    if(parameters.doubles("strain_lin")==1) membrane_strain_lin(node_forces);
+    else membrane_strain_exp(node_forces);
 
-	double home_rate =parameters.doubles("home_restoring_rate");
-	if (home_rate > 0.0){
-		for(int i=0; i<Np; ++i){
-			double home_x = initial_node_positions[i][0];
-			double home_y = initial_node_positions[i][1];
+	// Establishing membrane "memory" or "home" force, keeping the membrane from deforming inwards too much
+    if(parameters.doubles("restore_lin")==1) membrane_restoring_force_lin(node_forces);
+    else membrane_restoring_force_exp(node_forces);
 
-			double current_x = boundary_membrane_pts[i][0];
-			double current_y = boundary_membrane_pts[i][1];
+    ///_________
+    // Put Membrane Test Functions Here
 
-			double dx = home_x - current_x;
-			double dy = home_y - current_y;
-
-			node_forces[i].first  += home_rate * dx;
-			node_forces[i].second += home_rate * dy;
-		}
-	}
-
-	// TESTING 
-	// Testing Resistive Forces 
-
-	// double pull_force = parameters.doubles("test_pull_force");
-	// node_forces[1].first += pull_force;
-	// node_forces[0].first += pull_force; 
-
-	// // Calculate current distance between Node 0 and Node 1
-	// double dx = boundary_membrane_pts[1][0] - boundary_membrane_pts[0][0];
-	// double dy = boundary_membrane_pts[1][1] - boundary_membrane_pts[0][1];
-	// double current_len = sqrt(dx*dx + dy*dy);
-	// double rest_len = initial_edge_length[0]; // Should be 10.0
-	// double strain = (current_len - rest_len) / rest_len;
-
-	// // As you increase alpha increses 'strain' should decrease!
-	// // std::cout << "TEST_REPORT: Time=" << PhysiCell_globals.current_time 
-	// // 		<< " Length=" << current_len 
-	// // 		<< " Strain=" << strain 
-	// // 		<< " Alpha=" << parameters.doubles("stiffen_alpha") << std::endl;
-
-	// // // Calculate the distance of each node from its initial position
-
-	// // double home_x = initial_node_positions[0][0]; // 0.0
-	// // double current_x = boundary_membrane_pts[0][0];
-	// // double drift_dist = current_x - home_x;
-
-	// // // Calculate Edge Stretch (to prove Edge Force is asleep)
-	// // double dx = boundary_membrane_pts[1][0] - boundary_membrane_pts[0][0];
-	// // double dy = boundary_membrane_pts[1][1] - boundary_membrane_pts[0][1];
-	// // double edge_len = sqrt(dx*dx + dy*dy);
-
-	// // std::cout << "DRIFT TEST: Time=" << PhysiCell_globals.current_time 
-	// // 		<< " Drift_X=" << drift_dist 
-	// // 		<< " Edge_Length=" << edge_len 
-	// // 		<< " Home_K=" << k_home << std::endl;
-
-
+    if (test_perb != nullptr){
+        test_perb(node_forces, PhysiCell_globals.current_time);
+    }
 
 	// Update node positions
     for (int i = 0; i < Np; ++i) {
@@ -642,6 +503,18 @@ void setup_tissue( void )
 	double EP_rad = parameters.doubles("EP_rad");
 
 	generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf);
+
+    // _____________ TESTING  Triangle Membrane Elasticity and Restoring Force __________________
+
+	// int num_caf = parameters.ints("number_CAF_cells");
+	// Cell_Definition* Caf_def = cell_definitions_by_index[2];  // Need at least 1 cell or sim gets mad
+	// Cell* Caf = create_cell( *Caf_def );
+	// Caf->assign_position( { 225,200, 0.0 } );
+
+    // // Put Test Functions Here
+    // Test_Ring();
+    // test_perb = nullptr;  //nullptr if not testing
+
 	
 	// _____________ TESTING Membrane Elasticity and Restoring Force __________________
 

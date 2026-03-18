@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "PhysiCell",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/Users/cyeagle/Documents/Pancreatic-Duct-Project/PhysiCell/core",
+                "/Users/cyeagle/Documents/Pancreatic-Duct-Project/PhysiCell/modules",
+                "/Users/cyeagle/Documents/Pancreatic-Duct-Project/PhysiCell/BioFVM"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "macos-clang-x64"
+        }
+    ],
+    "version": 4
+}

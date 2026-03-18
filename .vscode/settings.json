@@ -80,5 +80,6 @@
         "span": "cpp",
         "stack": "cpp",
         "numbers": "cpp"
-    }
+    },
+    "git.ignoreLimitWarning": true
 }
