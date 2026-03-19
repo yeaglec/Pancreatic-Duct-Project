@@ -88,7 +88,7 @@
             <phenotype>
                 <cycle code="5" name="live">
                     <phase_transition_rates units="1/min">
-                        <rate start_index="0" end_index="0" fixed_duration="false">0.00072</rate>
+                        <rate start_index="0" end_index="0" fixed_duration="false">0</rate>
                     </phase_transition_rates>
                     <standard_asymmetric_division enabled="False">
                         <asymmetric_division_probability name="Epithelial" units="dimensionless">1.0</asymmetric_division_probability>
@@ -393,7 +393,7 @@
             <phenotype>
                 <cycle code="5" name="live">
                     <phase_transition_rates units="1/min">
-                        <rate start_index="0" end_index="0" fixed_duration="false">.002</rate>
+                        <rate start_index="0" end_index="0" fixed_duration="false">0.00072</rate>
                     </phase_transition_rates>
                     <standard_asymmetric_division enabled="False">
                         <asymmetric_division_probability name="Epithelial" units="dimensionless">0</asymmetric_division_probability>
@@ -704,9 +704,9 @@
 
     <user_parameters>
         <number_of_cells type="int" units="none" description="initial number of cells (for each cell type)">0</number_of_cells>
-        <membrane_interaction_length type="double" units="micron" description="cell membrane interaction length">50</membrane_interaction_length>
-        <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">.001</membrane_adhesion_strength>
-        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">.001</membrane_spring_constant>
+        <membrane_interaction_length type="double" units="micron" description="cell membrane interaction length">10</membrane_interaction_length>
+        <membrane_adhesion_strength type="double" units="micron/min" description="cell membrane adhesions strength">.1</membrane_adhesion_strength>
+        <membrane_spring_constant type="double" units="micron/um" description="membrane spring constant">.1</membrane_spring_constant>
         <membrane_num_points type="int" units="none" description="number of points for the membrane shape">1000</membrane_num_points>
         <ep_displacement type="double" units="micron" description="epithelial cell displacement">10</ep_displacement>
         <membrane_deadzone type="double" units="micron/min" description="deadzone for the membrane spring force">0</membrane_deadzone>
@@ -733,9 +733,9 @@
         <strain_lin type="double" units="micron" description="lin or exp strain force">0</strain_lin>
         <seg_lin type="double" units="1/min" description="segment linear parament">.001</seg_lin>
         <seg_exp type="double" units="1/min" description="segment exponential parameter">.01</seg_exp>
-        <restore_lin type="double" units="micron" description="lin or exp strain force">0</restore_lin>
+        <restore_lin type="double" units="micron" description="lin or exp strain force">1</restore_lin>
         <test_pull_force type="double" units="micron/min" description="test pull force">0</test_pull_force>
         <home_lin type="double" units="micron/min" description="home restoring linear force">0</home_lin>
-        <home_exp type="double" units="none" description="home restoring exponential force">0</home_exp>
+        <home_exp type="double" units="none" description="home restoring exponential force">00</home_exp>
     </user_parameters>
 </PhysiCell_settings>
