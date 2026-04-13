@@ -1,0 +1,5 @@
+-std=c++17
+-I/Users/cyeagle/Documents/Pancreatic-Duct-Project/PhysiCell/custom_modules
+-I/Users/cyeagle/Documents/Pancreatic-Duct-Project/PhysiCell/core
+-I/Users/cyeagle/Documents/Pancreatic-Duct-Project/PhysiCell/modules
+-I/Users/cyeagle/Documents/Pancreatic-Duct-Project/PhysiCell/BioFVM
