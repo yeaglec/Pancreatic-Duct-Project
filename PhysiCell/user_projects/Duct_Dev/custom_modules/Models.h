@@ -29,5 +29,6 @@ void membrane_restoring_force_lin(std::vector<std::pair<double,double>>& node_fo
 void membrane_restoring_force_exp(std::vector<std::pair<double,double>>& node_forces);
 void BM_Smoothing(std::vector<std::pair<double,double>>& node_forces, double Fx_BM, double Fy_BM, int best_k, double best_px, double best_py, double best_t);
 
-
+void membrane_bending_stiffness(std::vector<std::pair<double,double>>& node_forces);
+void add_membrane_nodes();
 #endif

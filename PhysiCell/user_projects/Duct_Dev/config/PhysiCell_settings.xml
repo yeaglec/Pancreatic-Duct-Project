@@ -14,7 +14,7 @@
     </domain>
 
     <overall>
-        <max_time units="min">10000</max_time>
+        <max_time units="min">9760.0</max_time>
         <time_units>min</time_units>
         <space_units>micron</space_units>
         <dt_diffusion units="min">0.01</dt_diffusion>
@@ -729,13 +729,21 @@
         <EPy type="double" units="micron" description="y position of the first epithelial cell">200</EPy>
         <CAF_rad type="double" units="micron" description="radius of the clustered cells">20</CAF_rad>
         <EP_rad type="double" units="micron" description="radius of the first epithelial cell">40</EP_rad>
-        <Segment_Elasticity type="double" units="1/min" description="0-no segment force, 1-elastic segment force">0</Segment_Elasticity>
-        <strain_lin type="double" units="micron" description="lin or exp strain force">0</strain_lin>
-        <seg_lin type="double" units="1/min" description="segment linear parament">.001</seg_lin>
-        <seg_exp type="double" units="1/min" description="segment exponential parameter">.01</seg_exp>
-        <restore_lin type="double" units="micron" description="lin or exp strain force">1</restore_lin>
         <test_pull_force type="double" units="micron/min" description="test pull force">0</test_pull_force>
+        <_____new_mechanics_______ type="double" units="none" description="new mechanics parameters">0</_____new_mechanics_______>
+        <is_gaussian_smoothing type="double" units="micron" description="on/off switch for gaussian smoothing">1</is_gaussian_smoothing>
+        <Segment_Elasticity type="double" units="1/min" description="Toggle Strain Force">0</Segment_Elasticity>
+        <is_strain_lin type="double" units="micron" description="on/off switch for linear strain force">0</is_strain_lin>
+        <seg_lin type="double" units="1/min" description="segment linear parament">.05</seg_lin>
+        <seg_exp type="double" units="1/min" description="segment exponential parameter">2</seg_exp>
+        <is_restore_lin type="double" units="micron" description="on/off switch for linear restoring force">0</is_restore_lin>
         <home_lin type="double" units="micron/min" description="home restoring linear force">0</home_lin>
-        <home_exp type="double" units="none" description="home restoring exponential force">00</home_exp>
+        <home_exp type="double" units="none" description="home restoring exponential force">0</home_exp>
+        <is_bending_stiffness type="double" units="micron" description="on/off switch for membrane bending force">0</is_bending_stiffness>
+        <membrane_bending_constant type="double" units="micron/min" description="membrane bending constant">2</membrane_bending_constant>
+        <max_edge_length type="double" units="micron" description="maximum edge length for the membrane">8</max_edge_length>
+        <is_add_membrane_nodes type="double" units="micron" description="on/off switch for adding membrane nodes">0</is_add_membrane_nodes>
+        <is_lumenal_pressure type="double" units="micron/min" description="on/off switch for lumenal pressure">1</is_lumenal_pressure>
+        <lumenal_pressure_strength type="double" units="micron/min" description="lumenal pressure strength">.0015</lumenal_pressure_strength>
     </user_parameters>
 </PhysiCell_settings>

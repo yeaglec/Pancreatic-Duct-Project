@@ -77,6 +77,8 @@ std::vector<std::vector<double>> boundary_membrane_pts;
 std::vector<double> initial_edge_length; 
 std::vector<std::vector<double>> initial_node_positions; 
 
+int BM_Fx_idx, BM_Fy_idx, BM_k_idx, BM_px_idx, BM_py_idx, BM_t_idx;
+
 void (*test_perb)(std::vector<std::pair<double,double>>&, double) = nullptr;
 
 
@@ -86,17 +88,10 @@ void (*test_perb)(std::vector<std::pair<double,double>>&, double) = nullptr;
 // ________________________________________________________________________________________________________________________
 
 // ################ Function that computes the BM-to-Cell force ####################
-std::pair<double,double> basement_membrane_interactions_cc(Cell* pCell)                 //REFACTOR TO INCLUDE BM INT AND CELL INT IN ONE FUNCTION
+std::pair<double,double> basement_membrane_interactions_cc(Cell* pCell, double de, double px, double py)
 {
     double cell_x = pCell->position[0];
     double cell_y = pCell->position[1];
-
-    auto [dist, px, py, k, t] = project_point_onto_boundary(cell_x, cell_y);
-    bool inside = is_inside(cell_x, cell_y, boundary_membrane_pts);
-
-    double d = inside ? -dist : dist;
-    double R = pCell->phenotype.geometry.radius;
-    double de = d - (d < 0 ? -R : R); // Effective distance
 
 	// if (de > 0) {
 
@@ -140,6 +135,14 @@ void cell_interactions_cc(Cell* pCell,
 
     double R = pCell->phenotype.geometry.radius;
     double de = d - (d < 0 ? -R : R);
+
+    auto cell_force = basement_membrane_interactions_cc(pCell, de, px, py);
+    pCell->custom_data[BM_Fx_idx] = cell_force.first;
+    pCell->custom_data[BM_Fy_idx] = cell_force.second;
+    pCell->custom_data[BM_k_idx] = k;
+    pCell->custom_data[BM_px_idx] = px;
+    pCell->custom_data[BM_py_idx] = py;
+    pCell->custom_data[BM_t_idx] = t;
 
     // --- quick type check ---
     std::string cell_name = cell_definitions_by_index[pCell->type]->name;
@@ -261,20 +264,19 @@ void update_basement_membrane_deformation2(double dt)
     // Iterate over all cells and compute membrane forces distributed by Gaussian
     for (Cell* pCell : *all_cells) {
 
-        auto cell_force = basement_membrane_interactions_cc(pCell);  // Cell-to-BM force
-        double Fx_cell = cell_force.first;
-        double Fy_cell = cell_force.second;
+        double Fx_cell = pCell->custom_data[BM_Fx_idx];
+        double Fy_cell = pCell->custom_data[BM_Fy_idx];
 
         if (Fx_cell == 0.0 && Fy_cell == 0.0) continue;
 
         double Fx_BM = -Fx_cell;   
         double Fy_BM = -Fy_cell;
 
-        // Computing the projection of a cell onto the BM TODO: Make helper for proj code
-        double cell_x = pCell->position[0];
-        double cell_y = pCell->position[1];
-
-        auto [best_dist, best_px, best_py, best_k_d, best_t] = project_point_onto_boundary(cell_x, cell_y);
+        // Consume the cached projection data
+        double best_k_d = pCell->custom_data[BM_k_idx];
+        double best_px = pCell->custom_data[BM_px_idx];
+        double best_py = pCell->custom_data[BM_py_idx];
+        double best_t = pCell->custom_data[BM_t_idx];
 		int best_k = static_cast<int>(std::round(best_k_d));
 
 		BM_Smoothing(node_forces, Fx_BM, Fy_BM, best_k, best_px, best_py, best_t);
@@ -367,6 +369,20 @@ void create_cell_types( void )
 	cell_defaults.functions.update_phenotype = NULL; // update_cell_and_death_parameters_O2_based; 
 	cell_defaults.functions.custom_cell_rule = NULL; 
 	cell_defaults.functions.contact_function = NULL; 
+
+    cell_defaults.custom_data.add_variable( "BM_Fx", "micron/min", 0.0 );
+    cell_defaults.custom_data.add_variable( "BM_Fy", "micron/min", 0.0 );
+    cell_defaults.custom_data.add_variable( "BM_k", "dimensionless", -1.0 );
+    cell_defaults.custom_data.add_variable( "BM_px", "micron", 0.0 );
+    cell_defaults.custom_data.add_variable( "BM_py", "micron", 0.0 );
+    cell_defaults.custom_data.add_variable( "BM_t", "dimensionless", 0.0 );
+
+    BM_Fx_idx = cell_defaults.custom_data.find_variable_index("BM_Fx");
+    BM_Fy_idx = cell_defaults.custom_data.find_variable_index("BM_Fy");
+    BM_k_idx = cell_defaults.custom_data.find_variable_index("BM_k");
+    BM_px_idx = cell_defaults.custom_data.find_variable_index("BM_px");
+    BM_py_idx = cell_defaults.custom_data.find_variable_index("BM_py");
+    BM_t_idx = cell_defaults.custom_data.find_variable_index("BM_t");
  
 	
 	// std::cout << "Cell type defaults set. (Test)" << std::endl;

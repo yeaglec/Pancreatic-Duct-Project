@@ -25,4 +25,10 @@ void Test_Square_Pert(std::vector<std::pair<double,double>>& node_forces, double
 void Test_Ring();
 void Test_Ring_Pert(std::vector<std::pair<double,double>>& node_forces, double current_time);
 
+void Test_Bending();
+void Test_Bending_Pert(std::vector<std::pair<double,double>>& node_forces, double current_time);
+
+void Test_Remesh();
+void Test_Remesh_Pert(std::vector<std::pair<double,double>>& node_forces, double current_time);
+
 #endif

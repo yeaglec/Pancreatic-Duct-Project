@@ -94,8 +94,17 @@ std::pair<double,double> voxel_indices(Cell* pCell){
 
 	return {i, j};
 }
+/* 
+####### Helper to test if point (x,y) is inside the polygon ##########
+Determines if a point (x, y) is strictly inside a closed polygon using the 
+ray-casting (even-odd) algorithm. 
 
-// ####### Helper to test if point (x,y) is inside the polygon ##########
+Note on Edge case handling: for the intersection condition ((y1 > y) != (y2 > y))
+Vertices: Strict inequalities ensure a horizontal ray passing exactly through 
+a vertex is only counted if the connecting edge extends above the ray. This 
+prevents double-counting when passing through a vertex.
+Horizontal edges: Ignored safely as y1 and y2 will have the same relation to y.
+*/
 bool is_inside(double x, double y, const std::vector<std::vector<double>>& BM_pts) {
 
 	// std::cout << "We are inside the is_inside function!!!" << std::endl;
@@ -104,18 +113,18 @@ bool is_inside(double x, double y, const std::vector<std::vector<double>>& BM_pt
 	bool inside = false;
 	int Np = (int)BM_pts.size();
 
-	for(int k=0; k<Np; ++k) {                                         // Looping through each edge of the polygon
+	for(int k=0; k<Np; ++k) {                                         
 
 		double x1 = BM_pts[k][0], y1 = BM_pts[k][1];           
 		double x2 = BM_pts[(k+1)%Np][0], y2 = BM_pts[(k+1)%Np][1];    // (x1,y1) and (x2,y2) are the endpoints of the edge
 
 		// Check if horizontal ray intersects the edge between (x1,y1) and (x2,y2)
-		// 
-		if(((y1 > y) != (y2 > y)) ) {                                  //This should handle edges cases now
-
+		if(((y1 > y) != (y2 > y)) ) {                                  
 			double xint = x1 + (y - y1)*(x2 - x1)/(y2 - y1);           // Note here xint is the x-coordinate of the intersection point of the horizontal ray with the edge
-			
-			if(x < xint) inside = !inside;                             // Reversed logic: ray extends to the right!
+
+			// Since the ray is cast in the +x direction, we only toggle the state 
+            // if the intersection happens to the right of our test point.
+			if(x < xint) inside = !inside;                             
 		}
 	}
 return inside;
