@@ -88,7 +88,7 @@
             <phenotype>
                 <cycle code="5" name="live">
                     <phase_transition_rates units="1/min">
-                        <rate start_index="0" end_index="0" fixed_duration="false">.00072</rate>
+                        <rate start_index="0" end_index="0" fixed_duration="false">0</rate>
                     </phase_transition_rates>
                     <standard_asymmetric_division enabled="False">
                         <asymmetric_division_probability name="Epithelial" units="dimensionless">1.0</asymmetric_division_probability>
@@ -393,7 +393,7 @@
             <phenotype>
                 <cycle code="5" name="live">
                     <phase_transition_rates units="1/min">
-                        <rate start_index="0" end_index="0" fixed_duration="false">0</rate>
+                        <rate start_index="0" end_index="0" fixed_duration="false">0.00144</rate>
                     </phase_transition_rates>
                     <standard_asymmetric_division enabled="False">
                         <asymmetric_division_probability name="Epithelial" units="dimensionless">0</asymmetric_division_probability>
@@ -710,7 +710,7 @@
         <ep_displacement type="double" units="micron" description="epithelial cell displacement">10</ep_displacement>
         <membrane_deadzone type="double" units="micron/min" description="deadzone for the membrane spring force">0</membrane_deadzone>
         <cell_deadzone type="double" units="micron/min" description="deadzone for the cell spring force">0</cell_deadzone>
-        <membrane_force_smoothing_sigma type="double" units="micron" description="sigma for the membrane force smoothing">3</membrane_force_smoothing_sigma>
+        <membrane_force_smoothing_sigma type="double" units="micron" description="sigma for the membrane force smoothing">0</membrane_force_smoothing_sigma>
         <proliferation_exit_rate type="double" units="1/min" description="exit rate for proliferation">.00072</proliferation_exit_rate>
         <membrane_correction_rate type="double" units="micron/min" description="membrane repulsion strength">1</membrane_correction_rate>
         <___tests___ type="double" units="none" description="test parameter">0</___tests___>
@@ -721,7 +721,7 @@
         <test_velocity_magnitude type="double" units="micron/min" description="test velocity magnitude">1</test_velocity_magnitude>
         <rep_test type="double" units="micron/min" description="repulsion test">0</rep_test>
         <number_CAF_cells type="int" units="none" description="number of CAF cells">0</number_CAF_cells>
-        <number_EP_cells type="int" units="none" description="number of epithelial cells">75</number_EP_cells>
+        <number_EP_cells type="int" units="none" description="number of epithelial cells">125</number_EP_cells>
         <CAFx type="double" units="micron" description="x position of the first CAF cell">340</CAFx>
         <CAFy type="double" units="micron" description="y position of the first CAF cell">0</CAFy>
         <EPx type="double" units="micron" description="x position of the first epithelial cell">-265</EPx>

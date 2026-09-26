@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ic_cells>
+  <cell_patches name="default">
+    <patch_collection type="disc">
+      <patch ID="1">
+        <x0>0.0</x0>
+        <y0>0.0</y0>
+        <z0>0.0</z0>
+        <radius>40.0</radius>
+        <number>50</number>
+        <normal>0,0,1</normal>
+        <max_fails>100</max_fails>
+        <carveout_patches>
+          <patch_collection type="rectangle">
+            <patch ID="1">
+              <x0>0.0</x0>
+              <y0>0.0</y0>
+              <z0>0.0</z0>
+              <width>10.0</width>
+              <height>10.0</height>
+            </patch>
+          </patch_collection>
+        </carveout_patches>
+      </patch>
+    </patch_collection>
+    <patch_collection type="annulus">
+      <patch ID="1">
+        <x0>50.0</x0>
+        <y0>50.0</y0>
+        <z0>0.0</z0>
+        <inner_radius>10.0</inner_radius>
+        <outer_radius>200.0</outer_radius>
+        <number>50</number>
+        <restrict_to_domain>true</restrict_to_domain>
+      </patch>
+    </patch_collection>
+    <patch_collection type="rectangle">
+      <patch ID="1">
+        <x0>-50.0</x0>
+        <y0>-50.0</y0>
+        <z0>0.0</z0>
+        <x1>50.0</x1>
+        <y1>50.0</y1>
+        <number>10</number>
+        <carveout_patches>
+          <patch_collection type="disc">
+            <patch ID="1">
+              <x0>0.0</x0>
+              <y0>0.0</y0>
+              <z0>0.0</z0>
+              <radius>10.0</radius>
+            </patch>
+          </patch_collection>
+        </carveout_patches>
+      </patch>
+    </patch_collection>
+    <patch_collection type="everywhere">
+      <patch ID="1">
+        <number>78</number>
+        <carveout_patches>
+          <patch_collection type="annulus">
+            <patch ID="1">
+              <x0>0.0</x0>
+              <y0>0.0</y0>
+              <z0>0.0</z0>
+              <inner_radius>100.0</inner_radius>
+              <outer_radius>400.0</outer_radius>
+            </patch>
+          </patch_collection>
+        </carveout_patches>
+      </patch>
+    </patch_collection>
+  </cell_patches>
+</ic_cells>
