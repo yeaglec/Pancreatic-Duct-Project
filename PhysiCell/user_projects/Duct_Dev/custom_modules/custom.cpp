@@ -283,20 +283,22 @@ void setup_tissue( void )
 	double EP_rad = parameters.doubles("EP_rad");
 
 	generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf);
-  	// Cell_Definition* pTumorDef = cell_definitions_by_name["CAF"];
-	// Cell* Caf = create_cell( *pTumorDef );
-	// Caf->assign_position( { 10,10, 0.0 } );
+  	
 
     // _____________ TESTING  Triangle Membrane Elasticity and Restoring Force __________________
 
 	// int num_caf = parameters.ints("number_CAF_cells");
 	// Cell_Definition* Caf_def = cell_definitions_by_index[2];  // Need at least 1 cell or sim gets mad
 	// Cell* Caf = create_cell( *Caf_def );
-	// Caf->assign_position( { 225,200, 0.0 } );
+	// Caf->assign_position( { 120,0, 0.0 } );
+	// // Caf->is_movable = false;
+
 
     // // Put Test Functions Here
-    // Test_Ring();
-    // test_perb = nullptr;  //nullptr if not testing
+   	// Test_KernelCell();
+    // test_perb = Test_KernelCell_Log;
+
+	
 
 	
 	// _____________ TESTING Membrane Elasticity and Restoring Force __________________
