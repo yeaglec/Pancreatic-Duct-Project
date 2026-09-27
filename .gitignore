@@ -2,6 +2,28 @@
 # The final slash indicates a directory
 
 /PhysiCell/user_projects/Duct_LSM/
+/PhysiCell/user_projects/Duct_Dev/Claude_Outputs
 /Archive/
-/PCMM/
-/Archive/
+.DS_Store
+.vscode
+.claude
+
+# --- PCMM/Duct_Dev/scripts: generated outputs, not source ---
+# Matches Outputs/ and logs/ folders and *.log files at any depth under scripts/
+# (e.g. Figures/Figure1/Outputs/, Figures/logs/, future Model_Evaluation/*/Outputs/, etc.)
+/PCMM/Duct_Dev/scripts/**/Outputs/
+/PCMM/Duct_Dev/scripts/**/output/
+/PCMM/Duct_Dev/scripts/**/logs/
+/PCMM/Duct_Dev/scripts/**/*.log
+
+# --- OS / editor cruft ---
+.AppleDouble
+.LSOverride
+Icon?
+*.swp
+*.swo
+*~
+
+# --- Python bytecode caches (e.g. under Studio/, or future python scripts) ---
+__pycache__/
+*.pyc
