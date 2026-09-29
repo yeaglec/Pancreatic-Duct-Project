@@ -32,6 +32,16 @@ void boundary_to_csv( std::vector<std::vector<double>> const& boundary_pts,
 	std::cout << "Boundary points saved to " << filename << " successfully" << std::endl;
 }
 
+// ######### Draw the basement membrane as a closed red line in SVG snapshots (matches Studio: red, linewidth 3) #########
+// Requires the SVG_overlay_function hook in PhysiCell_pathology (PCMM copy of PhysiCell)
+void draw_membrane_SVG( std::ofstream& os, double X_lower, double Y_lower )
+{
+	os << "  <polygon fill=\"none\" stroke=\"red\" stroke-width=\"3\" points=\"";
+	for( auto& pt : boundary_membrane_pts )
+	{ os << pt[0] - X_lower << "," << pt[1] - Y_lower << " "; }
+	os << "\"/>" << std::endl;
+}
+
 
 
 // Cameron Code for division parallel to segments

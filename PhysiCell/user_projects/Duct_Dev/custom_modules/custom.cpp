@@ -255,23 +255,11 @@ void setup_tissue( void )
 	//_______________________________________________________________________________________________________________________
     // Initialization
 
-    // Placing cells to test the basement membrane deformation
-	// Example code for generating a arbitrary boundary
-
-	int num_points = parameters.ints("membrane_num_points");
-	double a = 300.0, b = 250.0;
-	double amp = 0.1;              // Amplitude of deformation
-	int freq = 4;  
-	int num_ep = parameters.ints("number_EP_cells");
-
-	boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
-	double ep_dis = parameters.doubles("ep_displacement");
-	generate_boundary_cells(a, b, amp, freq, "Epithelial", ep_dis, num_ep);
-
-	int num_caf = parameters.ints("number_CAF_cells");
-	// Cell_Definition* Caf_def = cell_definitions_by_index[2];
-	// Cell* Caf = create_cell( *Caf_def );
-	// Caf->assign_position( { 225,200, 0.0 } );
+    // Placing the initial membrane and cells (0: default, 1: star, 2: circle)
+	int shape = parameters.ints("membrane_shape");
+	if( shape == 1 ) setup_membrane_star();
+	else if( shape == 2 ) setup_membrane_circle();
+	else setup_membrane_default();
 
 	double CAFx = parameters.doubles("CAFx");
 	double CAFy = parameters.doubles("CAFy");
@@ -282,7 +270,6 @@ void setup_tissue( void )
 	double CAF_rad = parameters.doubles("CAF_rad");
 	double EP_rad = parameters.doubles("EP_rad");
 
-	generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf);
   	// Cell_Definition* pTumorDef = cell_definitions_by_name["CAF"];
 	// Cell* Caf = create_cell( *pTumorDef );
 	// Caf->assign_position( { 10,10, 0.0 } );
@@ -326,18 +313,6 @@ void setup_tissue( void )
     // test_perb = Test_Remesh_Pert;  //nullptr if not testing
 
 	
-	// ##################
-
-	// Example Code for generating a circle boundary
-
-    // int num_points = parameters.ints("membrane_num_points");
-	// int num_ep = parameters.ints("number_EP_cells");
-	// double circle_radius = parameters.doubles("membrane_circle_radius");
-
-	// boundary_membrane_pts = generate_circle_boundary(circle_radius, num_points);
-	// generate_circle_cells(circle_radius, num_ep);
-
-
 	//_______________________________________________________________________________________________________________________
 
 	for (auto pCell : *all_cells){
@@ -349,7 +324,9 @@ void setup_tissue( void )
 	}
 	
     initialize_level_set_duct(boundary_membrane_pts);
-	return; 
+
+	// SVG_overlay_function = draw_membrane_SVG; // uncomment for PCMM to draw the membrane in SVGs (hook not in base PhysiCell)
+	return;
 }
 
 std::vector<std::string> my_coloring_function( Cell* pCell )

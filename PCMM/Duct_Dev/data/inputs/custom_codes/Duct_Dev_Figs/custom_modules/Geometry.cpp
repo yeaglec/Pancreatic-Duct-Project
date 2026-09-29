@@ -123,8 +123,15 @@ std::vector<std::vector<double>> generate_boundary_shape(double a, double b, dou
     return pts;
 }
 
+// Cancer cells are placed around cell 0 in the order 0, 1, -1, 2, -2, ...
+bool is_cancer_cell(int i, int num_cells, int num_cancer){
+	int d = std::min(i, num_cells - i);                     // ring distance from cell 0
+	int rank = (d == 0) ? 0 : (i == d ? 2*d - 1 : 2*d);     // placement order
+	return rank < num_cancer;
+}
+
 // Generating points for a deformed ellipse like shape
-void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells){
+void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells, int num_cancer){
 	
 	Cell_Definition* pBM_def = cell_definitions_by_name[type];   //cell_definitions_by_name[ type_name ] = pCD; 
 	
@@ -147,22 +154,12 @@ void generate_boundary_cells(double a, double b, double amp, int freq, std::stri
 		double xi = x - dis * nx;
 		double yi = y - dis * ny;
 
-		Cell_Definition* pTumorDef = cell_definitions_by_name["CAF"];
-		if (!pTumorDef) {
-		std::cerr << "Error: Tumor cell definition not found!" << std::endl;
-		continue;
-		}
-		std::cout << "Tumor cell definition found!" << std::endl;	
-
+		// NOTE: cancer cells currently use the "CAF" cell definition (naming to be fixed)
 		Cell* pC = nullptr;
-		std::cout << "Nullptr declared" << std::endl;	
-		if(i==0 || i==1 || i==num_cells-1 || i==2 || i==num_cells-2) pC = create_cell(*pTumorDef );
+		if (is_cancer_cell(i, num_cells, num_cancer)) pC = create_cell( *cell_definitions_by_name["CAF"] );
 		else pC = create_cell( *pBM_def );
-		std::cout << "Cell created" << std::endl;	
-
-		// Cell* pC = create_cell( *pBM_def );
 		
-		if (parameters.ints("number_EP_cells") == 1) pC->assign_position( { parameters.doubles("x"), parameters.doubles("y"), 0.0 } );
+		if (parameters.ints("number_total_cells") == 1) pC->assign_position( { parameters.doubles("x"), parameters.doubles("y"), 0.0 } );
 		else pC->assign_position( {xi, yi, 0.0 } );
 		
 		if(i==0)pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
@@ -178,7 +175,7 @@ void generate_boundary_cells(double a, double b, double amp, int freq, std::stri
 
 std::vector<std::vector<double>> generate_circle_boundary(){
 	double radius = parameters.doubles("membrane_circle_radius");
-	double num_points = parameters.doubles("membrane_num_points");
+	int num_points = parameters.ints("membrane_num_points");
 	std::vector<std::vector<double>> pts;	
 	pts.reserve(num_points);
 
@@ -193,7 +190,8 @@ std::vector<std::vector<double>> generate_circle_boundary(){
 
 void generate_circle_cells(){
 	
-		int num_ep = parameters.ints("number_EP_cells");
+		int num_ep = parameters.ints("number_total_cells");
+		int num_cancer = parameters.ints("num_cancer_cells");
 		Cell_Definition* pBM_def = cell_definitions_by_index[0];
 		double ep_dis = parameters.doubles("ep_displacement");
 
@@ -212,11 +210,14 @@ void generate_circle_cells(){
 			double xi = x - ep_dis * nx;
 			double yi = y - ep_dis * ny;
 
-			Cell* pC = create_cell( *pBM_def );
+			// NOTE: cancer cells currently use the "CAF" cell definition (naming to be fixed)
+			Cell* pC = nullptr;
+			if (is_cancer_cell(i, num_ep, num_cancer)) pC = create_cell( *cell_definitions_by_name["CAF"] );
+			else pC = create_cell( *pBM_def );
 
 			// Turn on proliferation for first cell
 
-			if( parameters.ints("number_EP_cells") > 1 ){
+			if( parameters.ints("number_total_cells") > 1 ){
 				pC->assign_position( { xi, yi, 0.0 } );
 			}
 			else{
@@ -227,9 +228,50 @@ void generate_circle_cells(){
 				std::cout << "Setting first cell to proliferate" << std::endl;
 				pC->phenotype.cycle.data.exit_rate(0) = parameters.doubles("proliferation_exit_rate");
 			}
-			
+
 		}
 	}
+
+// ________________________________________________________________________________________________________________________
+//_________________________________________________________________________________________________________________________
+// Initial Membrane Setups (toggled by user parameter "membrane_shape")
+// ________________________________________________________________________________________________________________________
+
+// 0: Deformed ellipse (default)
+void setup_membrane_default(){
+	double a = 300.0, b = 250.0;
+	double amp = 0.1;              // Amplitude of deformation
+	int freq = 4;
+	int num_ep = parameters.ints("number_total_cells");
+	int num_cancer = parameters.ints("num_cancer_cells");
+	int num_caf = parameters.ints("number_CAF_cells");      // leftover: actual CAFs placed just outside the membrane
+	double ep_dis = parameters.doubles("ep_displacement");
+
+	boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
+	generate_boundary_cells(a, b, amp, freq, "Epithelial", ep_dis, num_ep, num_cancer);
+	generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf, 0);
+}
+
+// 1: Star (hard coded example)
+void setup_membrane_star(){
+	double a = 250.0, b = 250.0;
+	double amp = 0.2;              // Amplitude of deformation
+	int freq = 5;
+	int num_ep = parameters.ints("number_total_cells");
+	int num_cancer = parameters.ints("num_cancer_cells");
+	int num_caf = parameters.ints("number_CAF_cells");      // leftover: actual CAFs placed just outside the membrane
+	double ep_dis = parameters.doubles("ep_displacement");
+
+	boundary_membrane_pts = generate_boundary_shape(a, b, amp, freq);
+	generate_boundary_cells(a, b, amp, freq, "Epithelial", ep_dis, num_ep, num_cancer);
+	generate_boundary_cells(a, b, amp, freq, "CAF", -5, num_caf, 0);
+}
+
+// 2: Circle (radius from "membrane_circle_radius")
+void setup_membrane_circle(){
+	boundary_membrane_pts = generate_circle_boundary();
+	generate_circle_cells();
+}
 
 // TODO CLEAN: MOVE TO UTILS
 void clustered_cell(double a, double b, double amp, int freq, int num_points, double center_x, double center_y, double radius, std::string type)

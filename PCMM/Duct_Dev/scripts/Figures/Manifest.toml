@@ -1,0 +1,26 @@
+# This file is machine-generated - editing it directly is not advised
+
+julia_version = "1.12.5"
+manifest_format = "2.0"
+project_hash = "1704832c0b6b1760b0396610751288ea1ef9e5a5"
+
+[[deps.Montage]]
+path = "/Users/cyeagle/Documents/Montage.jl"
+uuid = "b5316104-0607-4250-a2f2-009686a1a11b"
+version = "0.3.0"
+
+    [deps.Montage.extensions]
+    MontageCairoMakieExt = "CairoMakie"
+    MontageCairoMakiePCMMExt = ["CairoMakie", "PhysiCellModelManager", "PhysiCellOutput"]
+    MontageCairoMakiePhysiCellOutputExt = ["CairoMakie", "PhysiCellOutput"]
+    MontageMovieExt = ["Rsvg", "Cairo", "FFMPEG"]
+    MontagePhysiCellModelManagerExt = ["PhysiCellModelManager", "PhysiCellOutput"]
+    MontagePhysiCellOutputExt = "PhysiCellOutput"
+
+    [deps.Montage.weakdeps]
+    Cairo = "159f3aea-2a34-519c-b102-8c37f9878175"
+    CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+    FFMPEG = "c87230d0-a227-11e9-1b43-d7ebe4e7570a"
+    PhysiCellModelManager = "7582d1aa-5e58-4d65-a123-4418a61a2644"
+    PhysiCellOutput = "61ac5edc-a73d-4441-b68d-d9b510422d04"
+    Rsvg = "c4c386cf-5103-5370-be45-f3a111cca3b8"
