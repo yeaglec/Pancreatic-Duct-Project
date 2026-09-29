@@ -718,10 +718,12 @@
         <y type="double" units="micron" description="y position of the first epithelial cell">-100</y>
         <deformation_time_step type="double" units="min" description="time step for the basement membrane deformation">0</deformation_time_step>
         <membrane_circle_radius type="double" units="micron" description="radius of the circular membrane">300</membrane_circle_radius>
+        <membrane_shape type="int" units="none" description="initial membrane shape (0: default, 1: star, 2: circle)">2</membrane_shape>
         <test_velocity_magnitude type="double" units="micron/min" description="test velocity magnitude">1</test_velocity_magnitude>
         <rep_test type="double" units="micron/min" description="repulsion test">0</rep_test>
-        <number_CAF_cells type="int" units="none" description="number of CAF cells">0</number_CAF_cells>
-        <number_EP_cells type="int" units="none" description="number of epithelial cells">75</number_EP_cells>
+        <number_CAF_cells type="int" units="none" description="number of actual CAF cells placed just outside the membrane (leftover)">0</number_CAF_cells>
+        <number_total_cells type="int" units="none" description="total number of cells in the initial ring (epithelial + cancer)">75</number_total_cells>
+        <num_cancer_cells type="int" units="none" description="number of cancer cells in the ring, placed at cells 0, 1, -1, 2, -2, ...">1</num_cancer_cells>
         <CAFx type="double" units="micron" description="x position of the first CAF cell">340</CAFx>
         <CAFy type="double" units="micron" description="y position of the first CAF cell">0</CAFy>
         <EPx type="double" units="micron" description="x position of the first epithelial cell">-265</EPx>

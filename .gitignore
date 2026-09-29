@@ -11,7 +11,13 @@
 # --- PCMM/Duct_Dev/scripts: generated outputs, not source ---
 # Matches Outputs/ and logs/ folders and *.log files at any depth under scripts/
 # (e.g. Figures/Figure1/Outputs/, Figures/logs/, future Model_Evaluation/*/Outputs/, etc.)
-/PCMM/Duct_Dev/scripts/**/Outputs/
+# Outputs/ contents are ignored (not the folder itself) so each keeps a tracked .gitkeep
+/PCMM/Duct_Dev/scripts/**/Outputs/*
+!/PCMM/Duct_Dev/scripts/**/Outputs/.gitkeep
+
+# PCMM's own PhysiCell checkout (a separate git repo); our change to it is saved as
+# PCMM/Duct_Dev/scripts/Figures/physicell_svg_overlay.patch
+/PCMM/Duct_Dev/PhysiCell/
 /PCMM/Duct_Dev/scripts/**/output/
 /PCMM/Duct_Dev/scripts/**/logs/
 /PCMM/Duct_Dev/scripts/**/*.log

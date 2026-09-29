@@ -12,9 +12,12 @@ std::tuple<double, double, double, double, double> project_point_onto_boundary(d
 
 // Initialization Shapes
 std::vector<std::vector<double>> generate_boundary_shape(double a, double b, double amp, int freq);
-void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells);
+void generate_boundary_cells(double a, double b, double amp, int freq, std::string type, double dis, int num_cells, int num_cancer);
 std::vector<std::vector<double>> generate_circle_boundary();
 void generate_circle_cells();
+void setup_membrane_default();
+void setup_membrane_star();
+void setup_membrane_circle();
 void clustered_cell(double a, double b, double amp, int freq, int num_points, double center_x, double center_y, double radius, std::string type);
 
 #endif

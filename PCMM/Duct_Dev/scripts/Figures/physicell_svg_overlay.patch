@@ -1,0 +1,38 @@
+diff --git a/modules/PhysiCell_pathology.cpp b/modules/PhysiCell_pathology.cpp
+index eef368b..a8b0670 100644
+--- a/modules/PhysiCell_pathology.cpp
++++ b/modules/PhysiCell_pathology.cpp
+@@ -402,6 +402,8 @@ std::string formatted_minutes_to_DDHHMM( double minutes )
+ 	return output ;
+ }
+ 
++void (*SVG_overlay_function)(std::ofstream& os, double X_lower, double Y_lower) = NULL;
++
+ void SVG_plot(std::string filename, Microenvironment &M, double z_slice, double time, std::vector<std::string> (*cell_coloring_function)(Cell *), std::string (*substrate_coloring_function)(double, double, double), void(cell_counts_function)(char *))
+ {
+ 	double X_lower = M.mesh.bounding_box[0];
+@@ -663,6 +665,10 @@ void SVG_plot(std::string filename, Microenvironment &M, double z_slice, double
+ 	 }
+ 	*/
+ 
++	// user overlay (drawn on top of cells, inside the tissue transform)
++	if( SVG_overlay_function )
++	{ SVG_overlay_function( os, X_lower, Y_lower ); }
++
+ 	// end of the <g ID="tissue">
+ 	os << " </g>" << std::endl;
+ 
+diff --git a/modules/PhysiCell_pathology.h b/modules/PhysiCell_pathology.h
+index fae47f2..cfc12f1 100644
+--- a/modules/PhysiCell_pathology.h
++++ b/modules/PhysiCell_pathology.h
+@@ -124,6 +124,9 @@ std::string formatted_minutes_to_DDHHMM( double minutes );
+ 
+ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , double time, std::vector<std::string> (*cell_coloring_function)(Cell*), std::string (*substrate_coloring_function)(double, double, double) = paint_by_density_percentage, void (*cell_counts_function) (char*) = NULL); // done
+ 
++// optional user hook to draw extra shapes (e.g., a membrane) inside the tissue group of SVG_plot
++extern void (*SVG_overlay_function)(std::ofstream& os, double X_lower, double Y_lower);
++
+ void SVG_plot_with_stroma( std::string filename , Microenvironment& M, double z_slice , double time, std::vector<std::string> (*cell_coloring_function)(Cell*) , 
+ 	int ECM_index, std::vector<std::string> (*ECM_coloring_function)(double) ); // planned
+ 	
