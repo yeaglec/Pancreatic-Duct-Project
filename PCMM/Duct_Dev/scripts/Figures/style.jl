@@ -19,22 +19,24 @@ LEGEND = [
 const X_MIN, Y_MIN, SVG_H = -400, -400, 856
 
 """
-    zoom(xlim, ylim; bar = 50)
+    zoom(xlim, ylim; bar = 50, font = 9)
 
 Panel transform that crops a PhysiCell snapshot to the window `xlim` × `ylim` (µm), with a
-thin frame and a `bar` µm scale bar. The crop drops PhysiCell's caption, so put the time in the title.
+thin frame and a `bar` µm scale bar (label `font` px; raise it for wide windows, which get scaled down more).
+The crop drops PhysiCell's caption, so put the time in the title.
 """
-function zoom(xlim, ylim; bar = 50)
+function zoom(xlim, ylim; bar = 50, font = 9)
     w, h = xlim[2] - xlim[1], ylim[2] - ylim[1]
+    s = font / 9                                                # scales the bar's thickness and offsets with the label
     sx, sy = xlim[1] - X_MIN, SVG_H - (ylim[2] - Y_MIN)        # window's top-left corner in svg px
     return function (svg)
         body = replace(svg, r"^.*?<svg\b.*?>"s => "", r"</svg>\s*$" => "")   # strip root tag
         return """
         <svg width="$w" height="$h" xmlns="http://www.w3.org/2000/svg">
         <svg width="$w" height="$h" overflow="hidden"><g transform="translate($(-sx),$(-sy))">$body</g></svg>
-        <rect x="$(w - bar - 8)" y="$(h - 10)" width="$bar" height="3" fill="black"/>
-        <text x="$(w - bar / 2 - 8)" y="$(h - 14)" text-anchor="middle" font-family="Arial" font-size="9">$bar µm</text>
-        <rect x="0" y="0" width="$w" height="$h" fill="none" stroke="black" stroke-width="1"/>
+        <rect x="$(w - bar - 8s)" y="$(h - 10s)" width="$bar" height="$(3s)" fill="black"/>
+        <text x="$(w - bar / 2 - 8s)" y="$(h - 14s)" text-anchor="middle" font-family="Arial" font-size="$font">$bar µm</text>
+        <rect x="0" y="0" width="$w" height="$h" fill="none" stroke="black" stroke-width="$s"/>
         </svg>"""
     end
 end

@@ -4,11 +4,13 @@
 #   save_snapshot(sim_id, sel, dst)     copy a snapshot picked by sel = :initial, :final, or a cell count
 #   save_frame(sim_id, idx, dst)        copy snapshot number idx (or :final); frame_at(minutes) converts a time
 #   fresh_dir(path)                     empty a figure's Outputs folder (keeps .gitkeep)
-using PhysiCellModelManager, Printf
+#   frame_metrics(sim_id, frame)        the four duct metrics (Metrics.jl) of one saved frame; load_membrane / load_cells
+using PhysiCellModelManager, Printf, DelimitedFiles
 
 # Each figure runs as its own fresh `julia` process (no persisted project state), so initialize here.
 initializeModelManager(joinpath(@__DIR__, "..", ".."))            # -> Duct_Dev
 include(joinpath(@__DIR__, "..", "ParameterOptimization.jl"))     # -> output_index_at_cell_count
+include(joinpath(@__DIR__, "..", "Metrics.jl"))
 
 config_folder = custom_code_folder = rulesets_collection_folder = "Duct_Dev_Figs"
 inputs = InputFolders(config_folder, custom_code_folder; rulesets_collection = rulesets_collection_folder)
@@ -17,8 +19,8 @@ inputs = InputFolders(config_folder, custom_code_folder; rulesets_collection = r
 const SVG_INTERVAL = 6
 frame_at(minutes) = minutes ÷ SVG_INTERVAL
 
-snapshot_path(sim_id, idx) = joinpath(PhysiCellModelManager.dataDir(), "outputs", "simulations", "$sim_id", "output",
-                                      idx === :final ? "final.svg" : @sprintf("snapshot%08d.svg", idx))
+output_dir(sim_id) = joinpath(PhysiCellModelManager.dataDir(), "outputs", "simulations", "$sim_id", "output")
+snapshot_path(sim_id, idx) = joinpath(output_dir(sim_id), idx === :final ? "final.svg" : @sprintf("snapshot%08d.svg", idx))
 
 # Empty (or create) a figure's Outputs folder so stale snapshots never end up in a figure (keeps .gitkeep)
 function fresh_dir(path)
@@ -50,3 +52,19 @@ end
 
 # Copy the snapshot picked by `sel` to `dst`
 save_snapshot(sim_id, sel, dst) = save_frame(sim_id, snapshot_index(sim_id, sel), dst)
+
+# Membrane nodes (N×2) and live duct cells (x, y, radius, type) of saved frame `frame` (same 6-min index as the snapshots)
+load_membrane(sim_id, frame) = readdlm(joinpath(output_dir(sim_id), "boundary_t$(frame).csv"), ',', Float64)
+function load_cells(sim_id, frame)
+    c = PhysiCellSnapshot(sim_id, frame; include_cells = true).cells
+    c = c[(.!c.dead) .& (c.cell_type_name .!= "BM"), :]   # the basement-membrane agents are not part of the duct
+    return c.position_1, c.position_2, c.radius, c.cell_type_name
+end
+
+# The four metrics (Metrics.jl) of one saved frame, plus the cell count
+function frame_metrics(sim_id, frame; reach = 10.0)
+    m = load_membrane(sim_id, frame)
+    x, y, r, _ = load_cells(sim_id, frame)
+    return (IC = inverse_circularity(m), indent = max_indent_depth(m),
+            off_membrane = off_membrane_fraction(m, x, y, r; reach), filling = lumen_filling(m, r), cells = length(x))
+end
