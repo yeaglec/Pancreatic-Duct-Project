@@ -724,6 +724,9 @@
         <number_CAF_cells type="int" units="none" description="number of actual CAF cells placed just outside the membrane (leftover)">0</number_CAF_cells>
         <number_total_cells type="int" units="none" description="total number of cells in the initial ring (epithelial + cancer)">75</number_total_cells>
         <num_cancer_cells type="int" units="none" description="number of cancer cells in the ring, placed at cells 0, 1, -1, 2, -2, ...">1</num_cancer_cells>
+        <num_removed_cells type="int" units="none" description="perturbation: ring cells not placed (a gap), same order as cancer cells">0</num_removed_cells>
+        <num_displaced_cells type="int" units="none" description="perturbation: ring cells started off the membrane, same order as cancer cells">0</num_displaced_cells>
+        <displaced_distance type="double" units="micron" description="perturbation: extra inward distance of the displaced cells">15</displaced_distance>
         <CAFx type="double" units="micron" description="x position of the first CAF cell">340</CAFx>
         <CAFy type="double" units="micron" description="y position of the first CAF cell">0</CAFy>
         <EPx type="double" units="micron" description="x position of the first epithelial cell">-265</EPx>

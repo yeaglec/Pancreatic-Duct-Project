@@ -197,11 +197,13 @@ void create_cell_types( void )
 	cell_defaults.functions.custom_cell_rule = custom_rule; 
 	cell_defaults.functions.contact_function = contact_function; 
 
-	// Adding function for parallel division
-	Cell_Definition* pCD = cell_definitions_by_name["Epithelial"];
-	if (pCD)
-	{	
-		cell_defaults.functions.cell_division_function = parallel_cell_division;   // TODO CLEAN: Make one liner
+	// Parallel division for the ring cells. Set on each definition: only "Epithelial" (ID 0) is cell_defaults,
+	// the others were copied from it when the XML was read, so a cell_defaults change here would not reach them.
+	std::vector<std::string> division_targets = {"Epithelial","CAF"};
+	for (auto &name : division_targets) {
+		auto it = cell_definitions_by_name.find(name);
+		if (it == cell_definitions_by_name.end()) continue;
+		it->second->functions.cell_division_function = parallel_cell_division;
 	}
 
 	/*
@@ -332,8 +334,17 @@ void setup_tissue( void )
 std::vector<std::string> my_coloring_function( Cell* pCell )
 { return paint_by_number_cell_coloring(pCell); }
 
+// Epithelial cells only enter the cycle while touching the basement membrane (same range as the cell-membrane
+// adhesion). Runs after the rules, so it overrides their cycle entry for cells that were pushed off the membrane.
 void phenotype_function( Cell* pCell, Phenotype& phenotype, double dt )
-{ return; }
+{
+	if( pCell->type_name != "Epithelial" ) return;
+
+	auto [dist, px, py, k, t] = project_point_onto_boundary(pCell->position[0], pCell->position[1]);
+	double de = dist - phenotype.geometry.radius;   // gap between the cell surface and the membrane
+	if( de >= parameters.doubles("membrane_interaction_length") )
+	{ set_single_behavior( pCell, "cycle entry", 0.0 ); }
+}
 
 void custom_function( Cell* pCell, Phenotype& phenotype , double dt )
 { return; } 

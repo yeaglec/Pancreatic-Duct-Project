@@ -123,11 +123,24 @@ std::vector<std::vector<double>> generate_boundary_shape(double a, double b, dou
     return pts;
 }
 
-// Cancer cells are placed around cell 0 in the order 0, 1, -1, 2, -2, ...
-bool is_cancer_cell(int i, int num_cells, int num_cancer){
+// Placement order around cell 0: 0, 1, -1, 2, -2, ... (used for cancer, removed and displaced cells)
+int ring_rank(int i, int num_cells){
 	int d = std::min(i, num_cells - i);                     // ring distance from cell 0
-	int rank = (d == 0) ? 0 : (i == d ? 2*d - 1 : 2*d);     // placement order
-	return rank < num_cancer;
+	return (d == 0) ? 0 : (i == d ? 2*d - 1 : 2*d);
+}
+
+bool is_cancer_cell(int i, int num_cells, int num_cancer){
+	return ring_rank(i, num_cells) < num_cancer;
+}
+
+// Perturbations of the initial ring (both 0 by default): the first num_removed_cells are not placed (a gap),
+// the first num_displaced_cells start displaced_distance further inward (off the membrane)
+bool is_removed_cell(int i, int num_cells){
+	return ring_rank(i, num_cells) < parameters.ints("num_removed_cells");
+}
+
+double extra_displacement(int i, int num_cells){
+	return ring_rank(i, num_cells) < parameters.ints("num_displaced_cells") ? parameters.doubles("displaced_distance") : 0.0;
 }
 
 // Generating points for a deformed ellipse like shape
@@ -137,7 +150,8 @@ void generate_boundary_cells(double a, double b, double amp, int freq, std::stri
 	
 
     for (int i = 0; i < num_cells; i++) {
-        
+
+		if (is_removed_cell(i, num_cells)) continue;
         double theta = 2.0 * M_PI * i / (num_cells);
         
         double r_x = a * (1.0 + amp * cos(freq * theta));
@@ -151,8 +165,9 @@ void generate_boundary_cells(double a, double b, double amp, int freq, std::stri
 		double ny = y / r_norm;
 
 		// step back along the normal by ep_dis
-		double xi = x - dis * nx;
-		double yi = y - dis * ny;
+		double d = dis + extra_displacement(i, num_cells);
+		double xi = x - d * nx;
+		double yi = y - d * ny;
 
 		// NOTE: cancer cells currently use the "CAF" cell definition (naming to be fixed)
 		Cell* pC = nullptr;
@@ -196,6 +211,7 @@ void generate_circle_cells(){
 		double ep_dis = parameters.doubles("ep_displacement");
 
 		for (int i=0; i<num_ep; i++) {
+			if (is_removed_cell(i, num_ep)) continue;
 			double theta = 2.0 * M_PI * i / num_ep;
 			double radius = parameters.doubles("membrane_circle_radius");
 			double x = radius * cos(theta);
@@ -207,8 +223,9 @@ void generate_circle_cells(){
 			double ny = y / r_norm;
 
 			// step back along the normal by ep_dis
-			double xi = x - ep_dis * nx;
-			double yi = y - ep_dis * ny;
+			double d = ep_dis + extra_displacement(i, num_ep);
+			double xi = x - d * nx;
+			double yi = y - d * ny;
 
 			// NOTE: cancer cells currently use the "CAF" cell definition (naming to be fixed)
 			Cell* pC = nullptr;
