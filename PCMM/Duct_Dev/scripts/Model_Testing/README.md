@@ -23,9 +23,14 @@ base PhysiCell's API differs from PCMM's fork: `main.cpp`, two renamed calls in 
 ## Layout (built step by step)
 
 - `Experiments/` — one file per experiment, listing only its changes from the baseline (like the figures).
-- Runner — runs every experiment for baseline and candidate.
-- Checks — regression (switch off = identical output), health numbers, metrics over time.
-- Report — one HTML page per comparison.
+- `Candidates/` — one file per candidate: its input folder and any parameter changes on top of each experiment.
+- `run_comparison.jl <candidate>` — runs every experiment for baseline and candidate (1 simulation each, 30-min
+  saves) and writes `Outputs/<candidate>/simulations.csv`. `MAX_TIME=60` in the shell makes a quick check.
+- Checks — regression (switch off = identical output), health numbers, metrics over time. *(next)*
+- Report — one HTML page per comparison. *(next)*
+
+A candidate that changes code needs its own input folder name: PCMM reuses stored simulations whose inputs and
+parameters match, even if the code inside a folder changed.
 
 Note: PCMM reuses stored simulations whose parameters match, even after a code change. Reset the database
 after changing model code.
