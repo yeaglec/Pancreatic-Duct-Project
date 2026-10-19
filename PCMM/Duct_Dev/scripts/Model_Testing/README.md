@@ -22,8 +22,8 @@ base PhysiCell's API differs from PCMM's fork: `main.cpp`, two renamed calls in 
 
 ## Layout (built step by step)
 
-- `Scenarios/` — one file per test scenario, listing only its changes from the baseline (like the figures).
-- Runner — runs every scenario for baseline and candidate.
+- `Experiments/` — one file per experiment, listing only its changes from the baseline (like the figures).
+- Runner — runs every experiment for baseline and candidate.
 - Checks — regression (switch off = identical output), health numbers, metrics over time.
 - Report — one HTML page per comparison.
 
