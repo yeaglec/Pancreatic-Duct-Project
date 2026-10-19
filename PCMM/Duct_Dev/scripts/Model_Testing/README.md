@@ -26,7 +26,11 @@ base PhysiCell's API differs from PCMM's fork: `main.cpp`, two renamed calls in 
 - `Candidates/` — one file per candidate: its input folder and any parameter changes on top of each experiment.
 - `run_comparison.jl <candidate>` — runs every experiment for baseline and candidate (1 simulation each, 30-min
   saves) and writes `Outputs/<candidate>/simulations.csv`. `MAX_TIME=60` in the shell makes a quick check.
-- Checks — regression (switch off = identical output), health numbers, metrics over time. *(next)*
+- `checks.jl` — computed from saved outputs only, called at the end of `run_comparison.jl`:
+  per-frame health numbers (cells outside, wall gap, longest edge, displacement), numerical checks (stretch,
+  curvature), Metrics.jl numbers → `Outputs/<candidate>/checks/<experiment>_<version>.csv`; per-simulation
+  order of events and first breach (2 consecutive frames) → `Outputs/<candidate>/summary.csv`;
+  `same_output(sim_a, sim_b)` for the regression check.
 - Report — one HTML page per comparison. *(next)*
 
 A candidate that changes code needs its own input folder name: PCMM reuses stored simulations whose inputs and
