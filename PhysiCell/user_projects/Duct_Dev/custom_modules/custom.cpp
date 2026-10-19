@@ -76,6 +76,15 @@
 #include <iostream>
 
 std::vector<std::vector<double>> boundary_membrane_pts;
+
+// Draw the basement membrane as a closed red line in SVG snapshots (matches Studio: red, linewidth 3)
+void draw_membrane_SVG( std::ofstream& os, double X_lower, double Y_lower )
+{
+	os << "  <polygon fill=\"none\" stroke=\"red\" stroke-width=\"3\" points=\"";
+	for( auto& pt : boundary_membrane_pts )
+	{ os << pt[0] - X_lower << "," << pt[1] - Y_lower << " "; }
+	os << "\"/>" << std::endl;
+}
 std::vector<double> initial_edge_length; 
 std::vector<std::vector<double>> initial_node_positions; 
 
@@ -185,7 +194,7 @@ void create_cell_types( void )
        Cell rule definitions 
 	*/
 
-	setup_cell_rules(); 
+	setup_cell_rules(); // setup_behavior_rules() in PCMM's PhysiCell
 
 	/* 
 	   Put any modifications to individual cell definitions here. 
@@ -250,7 +259,7 @@ void setup_tissue( void )
 	double Zrange = Zmax - Zmin; 
 	
 	// load cells from your CSV file (if enabled)
-	load_cells_from_pugixml();
+	load_cells_from_pugixml(); // load_initial_cells() in PCMM's PhysiCell
 	set_parameters_from_distributions();
 
 	//_______________________________________________________________________________________________________________________
@@ -327,15 +336,30 @@ void setup_tissue( void )
 	
     initialize_level_set_duct(boundary_membrane_pts);
 
-	// SVG_overlay_function = draw_membrane_SVG; // uncomment for PCMM to draw the membrane in SVGs (hook not in base PhysiCell)
-	return;
+	// SVG_overlay_function = draw_membrane_SVG; // PCMM only: the overlay hook is not in base PhysiCell
+	return; 
 }
 
 std::vector<std::string> my_coloring_function( Cell* pCell )
 { return paint_by_number_cell_coloring(pCell); }
 
+// Number of cells touching pCell (centers closer than the sum of the radii)
+int touching_neighbors( Cell* pCell )
+{
+	int n = 0;
+	for( Cell* pOther : *all_cells )
+	{
+		if( pOther == pCell ) continue;
+		double d = norm( pOther->position - pCell->position );
+		if( d < pCell->phenotype.geometry.radius + pOther->phenotype.geometry.radius ) n++;
+	}
+	return n;
+}
+
 // Epithelial cells only enter the cycle while touching the basement membrane (same range as the cell-membrane
 // adhesion). Runs after the rules, so it overrides their cycle entry for cells that were pushed off the membrane.
+// With neighbor_contact_inhibition on, a cell on the membrane divides at its full base rate while it has a free side
+// (fewer than 2 touching neighbours) and not at all once both sides are taken — this replaces the pressure rule.
 void phenotype_function( Cell* pCell, Phenotype& phenotype, double dt )
 {
 	if( pCell->type_name != "Epithelial" ) return;
@@ -343,7 +367,13 @@ void phenotype_function( Cell* pCell, Phenotype& phenotype, double dt )
 	auto [dist, px, py, k, t] = project_point_onto_boundary(pCell->position[0], pCell->position[1]);
 	double de = dist - phenotype.geometry.radius;   // gap between the cell surface and the membrane
 	if( de >= parameters.doubles("membrane_interaction_length") )
-	{ set_single_behavior( pCell, "cycle entry", 0.0 ); }
+	{ set_single_behavior( pCell, "cycle entry", 0.0 ); return; }
+
+	if( parameters.ints("neighbor_contact_inhibition") == 1 )
+	{
+		double rate = touching_neighbors( pCell ) < 2 ? get_single_base_behavior( pCell, "cycle entry" ) : 0.0;
+		set_single_behavior( pCell, "cycle entry", rate );
+	}
 }
 
 void custom_function( Cell* pCell, Phenotype& phenotype , double dt )

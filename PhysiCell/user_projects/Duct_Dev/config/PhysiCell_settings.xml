@@ -88,7 +88,7 @@
             <phenotype>
                 <cycle code="5" name="live">
                     <phase_transition_rates units="1/min">
-                        <rate start_index="0" end_index="0" fixed_duration="false">.00072</rate>
+                        <rate start_index="0" end_index="0" fixed_duration="false">0</rate>
                     </phase_transition_rates>
                     <standard_asymmetric_division enabled="False">
                         <asymmetric_division_probability name="Epithelial" units="dimensionless">1.0</asymmetric_division_probability>
@@ -393,7 +393,7 @@
             <phenotype>
                 <cycle code="5" name="live">
                     <phase_transition_rates units="1/min">
-                        <rate start_index="0" end_index="0" fixed_duration="false">0</rate>
+                        <rate start_index="0" end_index="0" fixed_duration="false">0.00144</rate>
                     </phase_transition_rates>
                     <standard_asymmetric_division enabled="False">
                         <asymmetric_division_probability name="Epithelial" units="dimensionless">0</asymmetric_division_probability>
@@ -710,7 +710,7 @@
         <ep_displacement type="double" units="micron" description="epithelial cell displacement">10</ep_displacement>
         <membrane_deadzone type="double" units="micron/min" description="deadzone for the membrane spring force">0</membrane_deadzone>
         <cell_deadzone type="double" units="micron/min" description="deadzone for the cell spring force">0</cell_deadzone>
-        <membrane_force_smoothing_sigma type="double" units="micron" description="sigma for the membrane force smoothing">3</membrane_force_smoothing_sigma>
+        <membrane_force_smoothing_sigma type="double" units="micron" description="sigma for the membrane force smoothing">0</membrane_force_smoothing_sigma>
         <proliferation_exit_rate type="double" units="1/min" description="exit rate for proliferation">.00072</proliferation_exit_rate>
         <membrane_correction_rate type="double" units="micron/min" description="membrane repulsion strength">1</membrane_correction_rate>
         <___tests___ type="double" units="none" description="test parameter">0</___tests___>
@@ -718,15 +718,16 @@
         <y type="double" units="micron" description="y position of the first epithelial cell">-100</y>
         <deformation_time_step type="double" units="min" description="time step for the basement membrane deformation">0</deformation_time_step>
         <membrane_circle_radius type="double" units="micron" description="radius of the circular membrane">300</membrane_circle_radius>
-        <membrane_shape type="int" units="none" description="initial membrane shape (0: default, 1: star, 2: circle)">2</membrane_shape>
+        <membrane_shape type="int" units="none" description="initial membrane shape (0: default, 1: star, 2: circle)">0</membrane_shape>
         <test_velocity_magnitude type="double" units="micron/min" description="test velocity magnitude">1</test_velocity_magnitude>
         <rep_test type="double" units="micron/min" description="repulsion test">0</rep_test>
         <number_CAF_cells type="int" units="none" description="number of actual CAF cells placed just outside the membrane (leftover)">0</number_CAF_cells>
-        <number_total_cells type="int" units="none" description="total number of cells in the initial ring (epithelial + cancer)">75</number_total_cells>
-        <num_cancer_cells type="int" units="none" description="number of cancer cells in the ring, placed at cells 0, 1, -1, 2, -2, ...">1</num_cancer_cells>
+        <number_total_cells type="int" units="none" description="total number of cells in the initial ring (epithelial + cancer)">125</number_total_cells>
+        <num_cancer_cells type="int" units="none" description="number of cancer cells in the ring, placed at cells 0, 1, -1, 2, -2, ...">5</num_cancer_cells>
         <num_removed_cells type="int" units="none" description="perturbation: ring cells not placed (a gap), same order as cancer cells">0</num_removed_cells>
         <num_displaced_cells type="int" units="none" description="perturbation: ring cells started off the membrane, same order as cancer cells">0</num_displaced_cells>
         <displaced_distance type="double" units="micron" description="perturbation: extra inward distance of the displaced cells">15</displaced_distance>
+        <neighbor_contact_inhibition type="int" units="none" description="1: Epithelial cells on the membrane divide only with a free side (fewer than 2 touching neighbours), replacing the pressure rule">0</neighbor_contact_inhibition>
         <CAFx type="double" units="micron" description="x position of the first CAF cell">340</CAFx>
         <CAFy type="double" units="micron" description="y position of the first CAF cell">0</CAFy>
         <EPx type="double" units="micron" description="x position of the first epithelial cell">-265</EPx>
