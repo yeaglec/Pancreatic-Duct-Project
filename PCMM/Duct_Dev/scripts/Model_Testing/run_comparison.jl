@@ -3,12 +3,13 @@
 #   <candidate> = a file name in Candidates/ without .jl, e.g. adhesion_0.1
 #   MAX_TIME=60 in the shell shortens every experiment (a quick check that everything runs)
 # Output: Outputs/<candidate>/simulations.csv (experiment, version, inputs, sim_id), a copy of the candidate file,
-#         checks/<experiment>_<version>.csv (per frame) and summary.csv (per simulation); see checks.jl
+#         checks/<experiment>_<version>.csv (per frame), summary.csv (per simulation), report.html
 using PhysiCellModelManager
 
 initializeModelManager(joinpath(@__DIR__, "..", ".."))   # -> Duct_Dev
 include(joinpath(@__DIR__, "experiments.jl"))
 include(joinpath(@__DIR__, "checks.jl"))
+include(joinpath(@__DIR__, "report.jl"))
 
 BASELINE = "Duct_Baseline_V0.0.1"
 SAVE_INTERVAL = 30   # min between SVG / full-data saves (does not change the simulation itself)
@@ -54,3 +55,4 @@ for (e, b, c) in zip(experiments, baseline_runs, candidate_runs), (version, M) i
 end
 write_csv(joinpath(outdir, "summary.csv"), summary)
 println(read(joinpath(outdir, "summary.csv"), String))
+println("report: ", build_report(outdir))

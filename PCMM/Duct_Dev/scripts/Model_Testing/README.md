@@ -31,7 +31,10 @@ base PhysiCell's API differs from PCMM's fork: `main.cpp`, two renamed calls in 
   curvature), Metrics.jl numbers → `Outputs/<candidate>/checks/<experiment>_<version>.csv`; per-simulation
   order of events and first breach (2 consecutive frames) → `Outputs/<candidate>/summary.csv`;
   `same_output(sim_a, sim_b)` for the regression check.
-- Report — one HTML page per comparison. *(next)*
+- `report.jl` — one self-contained HTML page, `Outputs/<candidate>/report.html` (built at the end of
+  `run_comparison.jl`; rebuild alone with `julia --project=. Model_Testing/report.jl <candidate>`): hypothesis,
+  settings diff, summary table (green/red = candidate better/worse), paired snapshots (red border = after a
+  breach), baseline-vs-candidate charts, and what each number means.
 
 A candidate that changes code needs its own input folder name: PCMM reuses stored simulations whose inputs and
 parameters match, even if the code inside a folder changed.
