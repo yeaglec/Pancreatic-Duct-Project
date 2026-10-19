@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<behavior_rulesets>
+  <behavior_ruleset name="Epithelial">
+    <behavior name="cycle entry">
+      <type>setter</type>
+      <mediator>decreasing_dominant</mediator>
+      <decreasing_signals>
+        <aggregator>multivariate_hill</aggregator>
+        <max_response>0.0</max_response>
+        <signal name="pressure" type="partial_hill">
+          <applies_to_dead>0</applies_to_dead>
+          <half_max>0.5</half_max>
+          <hill_power>4.0</hill_power>
+        </signal>
+      </decreasing_signals>
+    </behavior>
+  </behavior_ruleset>
+  <behavior_ruleset name="CAF">
+    <behavior name="cycle entry">
+      <type>setter</type>
+      <mediator>decreasing_dominant</mediator>
+      <decreasing_signals>
+        <aggregator>multivariate_hill</aggregator>
+        <max_response>0.0</max_response>
+        <signal name="pressure" type="partial_hill">
+          <applies_to_dead>0</applies_to_dead>
+          <half_max>3.0</half_max>
+          <hill_power>4.0</hill_power>
+        </signal>
+      </decreasing_signals>
+    </behavior>
+  </behavior_ruleset>
+</behavior_rulesets>

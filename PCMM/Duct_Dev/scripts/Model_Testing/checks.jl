@@ -144,8 +144,8 @@ function same_output(sim_a, sim_b)
     n_frames(sim_a) == n_frames(sim_b) || return (identical = false, first_difference = "frame count")
     for f in 0:(n_frames(sim_a) - 1)
         read(joinpath(output_dir(sim_a), "boundary_t$f.csv")) == read(joinpath(output_dir(sim_b), "boundary_t$f.csv")) ||
-            return (identical = false, first_difference = "membrane, frame $f")
-        load_cells(sim_a, f) == load_cells(sim_b, f) || return (identical = false, first_difference = "cells, frame $f")
+            return (identical = false, first_difference = "membrane frame $f")
+        load_cells(sim_a, f) == load_cells(sim_b, f) || return (identical = false, first_difference = "cells frame $f")
     end
     return (identical = true, first_difference = "")
 end

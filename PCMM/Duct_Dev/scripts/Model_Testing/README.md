@@ -24,6 +24,9 @@ base PhysiCell's API differs from PCMM's fork: `main.cpp`, two renamed calls in 
 
 - `Experiments/` — one file per experiment, listing only its changes from the baseline (like the figures).
 - `Candidates/` — one file per candidate: its input folder and any parameter changes on top of each experiment.
+  Optional `check_identical = true` runs the regression check (is the output identical to the baseline?) for
+  code cleanups; `control_identical.jl` is the negative control (an identical copy of the baseline), run once per
+  pipeline or PCMM setup change to show runs are repeatable.
 - `run_comparison.jl <candidate>` — runs every experiment for baseline and candidate (1 simulation each, 30-min
   saves) and writes `Outputs/<candidate>/simulations.csv`. `MAX_TIME=60` in the shell makes a quick check.
 - `checks.jl` — computed from saved outputs only, called at the end of `run_comparison.jl`:

@@ -193,6 +193,17 @@ function build_report(outdir)
     end
     print(io, "</table>")
 
+    # Regression: identical to baseline?
+    regfile = joinpath(outdir, "regression.csv")
+    if isfile(regfile)
+        print(io, "<h3>Identical to baseline?</h3><p class=\"quiet\">Run because the candidate sets <code>check_identical = true</code>; ",
+              "a code cleanup or the negative control should read <b>yes</b>.</p><table><tr><th>Experiment</th><th>Identical</th><th>First difference</th></tr>")
+        for r in read_table(regfile)
+            print(io, "<tr><td>$(html(r["experiment"]))</td><td><b>$(fmt(r["identical"]))</b></td><td>$(fmt(r["first_difference"]))</td></tr>")
+        end
+        print(io, "</table>")
+    end
+
     # 3 + 4. Per experiment: snapshots, then charts
     for e in experiments
         b_rows, c_rows = rows_of(e, "baseline"), rows_of(e, "candidate")

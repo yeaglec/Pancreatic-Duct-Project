@@ -55,4 +55,20 @@ for (e, b, c) in zip(experiments, baseline_runs, candidate_runs), (version, M) i
 end
 write_csv(joinpath(outdir, "summary.csv"), summary)
 println(read(joinpath(outdir, "summary.csv"), String))
+
+# Regression: is the candidate identical to the baseline? Only when the candidate file sets check_identical = true
+# (code cleanups, the negative control); a new mechanic or parameter change is expected to differ.
+regfile = joinpath(outdir, "regression.csv")
+if get(candidate, :check_identical, false)
+    open(regfile, "w") do io
+        println(io, "experiment,identical,first_difference")
+        for (e, b, c) in zip(experiments, baseline_runs, candidate_runs)
+            r = same_output(only(simulationIDs(b)), only(simulationIDs(c)))
+            println(io, e.name, ",", r.identical, ",", isempty(r.first_difference) ? "missing" : r.first_difference)
+        end
+    end
+    println(read(regfile, String))
+else
+    rm(regfile; force = true)   # no stale result from an earlier run
+end
 println("report: ", build_report(outdir))
