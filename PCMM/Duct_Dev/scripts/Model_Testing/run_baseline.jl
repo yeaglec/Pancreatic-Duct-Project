@@ -7,6 +7,7 @@ initializeModelManager(joinpath(@__DIR__, "..", ".."))   # -> Duct_Dev
 
 BASELINE = "Duct_Baseline_V0.0.1"
 MAX_TIME = 10080   # 7 days
+setNumberOfParallelSims(4)
 
 inputs = InputFolders(BASELINE, BASELINE; rulesets_collection = BASELINE)
 out = run(inputs, DiscreteVariation(configPath("max_time"), MAX_TIME); n_replicates = 1, force_recompile = true)

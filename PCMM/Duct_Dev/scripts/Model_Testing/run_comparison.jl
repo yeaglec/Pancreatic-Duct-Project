@@ -1,5 +1,5 @@
 # Runs every experiment for the baseline and one candidate (1 simulation each) and records which simulation is which.
-# Usage (from scripts/):  PCMM_NUM_PARALLEL_SIMS=4 julia --project=. Model_Testing/run_comparison.jl <candidate>
+# Usage (from scripts/):  julia --project=. Model_Testing/run_comparison.jl <candidate>
 #   <candidate> = a file name in Candidates/ without .jl, e.g. adhesion_0.1
 #   MAX_TIME=60 in the shell shortens every experiment (a quick check that everything runs)
 # Output: Outputs/<candidate>/simulations.csv (experiment, version, inputs, sim_id), a copy of the candidate file,
@@ -12,7 +12,10 @@ include(joinpath(@__DIR__, "checks.jl"))
 include(joinpath(@__DIR__, "report.jl"))
 
 BASELINE = "Duct_Baseline_V0.0.1"
-SAVE_INTERVAL = 30   # min between SVG / full-data saves (does not change the simulation itself)
+SAVE_INTERVAL = 30       # min between SVG / full-data saves (does not change the simulation itself)
+NUM_PARALLEL_SIMS = 4    # simulations run at the same time
+setNumberOfParallelSims(NUM_PARALLEL_SIMS)   # overrides the "Max parallel sims" PCMM prints at start-up
+println("Running up to $NUM_PARALLEL_SIMS simulations in parallel")
 
 isempty(ARGS) && error("name a candidate, e.g.  julia --project=. Model_Testing/run_comparison.jl adhesion_0.1")
 candidate_file = joinpath(@__DIR__, "Candidates", ARGS[1] * ".jl")
