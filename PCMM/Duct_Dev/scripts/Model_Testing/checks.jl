@@ -20,7 +20,7 @@
 # are both measured from the first division.
 # Between simulations (same_output): the regression check, i.e. are two runs identical?
 using DelimitedFiles
-include(joinpath(@__DIR__, "..", "Metrics.jl"))   # area, perimeter, distance_to_membrane, the four metrics
+include(joinpath(@__DIR__, "..", "Metrics.jl"))   # area, perimeter, distance_to_membrane, inside, the four metrics
 
 const R_CELL = 8.4          # cell radius (µm): the fold threshold and the curvature span
 const ARC_EXCLUDE = 40.0    # µm along the membrane: closer pairs are neighbours, not opposite walls
@@ -43,16 +43,6 @@ function save_interval(sim_id)   # minutes between full-data saves, read from th
 end
 
 # ── Geometry helpers ──
-function inside(m, x, y)   # ray casting
-    n, c = size(m, 1), false
-    for i in 1:n
-        j = i == 1 ? n : i - 1
-        if (m[i, 2] > y) != (m[j, 2] > y) && x < (m[j, 1] - m[i, 1]) * (y - m[i, 2]) / (m[j, 2] - m[i, 2]) + m[i, 1]
-            c = !c
-        end
-    end
-    return c
-end
 edge_lengths(m) = [hypot(m[mod1(i + 1, size(m, 1)), 1] - m[i, 1], m[mod1(i + 1, size(m, 1)), 2] - m[i, 2]) for i in 1:size(m, 1)]
 arclength(m) = cumsum([0.0; edge_lengths(m)])   # s[i] at node i; s[end] = perimeter
 
