@@ -117,7 +117,9 @@ end
 
 const CHARTS = [("Closest wall gap", "µm", "wall_gap", true), ("Max displacement from start", "µm", "disp_max", true),
                 ("Perimeter stretch", "× start", "stretch", false), ("Smallest curvature radius", "µm", "min_curv_radius", true),
-                ("Off-membrane fraction", "", "off_membrane", true), ("Cells", "", "cells", true), ("Cells outside", "", "outside", true)]
+                ("Fold depth", "cell diameters", "fold_depth", true), ("Fold aspect", "depth ÷ mouth", "fold_aspect", true),
+                ("Layer thickness", "cell layers", "layer_thickness", false), ("Fold share", "1 = folds, 0 = stacks", "fold_share", true),
+                ("Cells", "", "cells", true), ("Cells outside", "", "outside", true)]
 
 const NOTES = [
     ("Cells outside", "Cells whose centre is outside the membrane. A breach is 2 consecutive frames with any; frames after it have a red border."),
@@ -126,8 +128,26 @@ const NOTES = [
     ("Perimeter / edge stretch", "Perimeter, and the largest edge, relative to the start. The BM should fold by bending, so large stretch is suspect. Edge stretch is only valid while remeshing is off."),
     ("Curvature radius", "Smallest radius of a circle through three membrane points 8.4 µm apart. Radii far below a cell size are spikes."),
     ("Order of events", "First fold: membrane moves ≥ 8.4 µm from where it was at the first division. First 2nd layer: off-membrane count rises above its value at the first division. Row 2 passes if the fold comes first."),
-    ("Off-membrane fraction", "Share of cells whose surface is ≥ 10 µm (the adhesion range) from the membrane."),
+    ("Lesion metrics", "Measured on the membrane within one cell diameter of a lesion (neoplastic) cell, in cell diameters, from a single frame (so also measurable on H&E). Compared at matched lesion sizes, not times. Definitions and tests: Metric_Testing/README.md."),
+    ("Fold depth / aspect", "Deepest lesion membrane point below the convex hull; aspect = depth ÷ width of the fold's mouth (low = broad dent, high = narrow fold)."),
+    ("Layer thickness", "Furthest lesion cell from the membrane, in cell layers (1 = monolayer)."),
+    ("Fold share", "Fold depth ÷ (fold depth + extra layers): 1 = the lesion folds, 0 = it stacks. Blank until it does either."),
+    ("IC", "Inverse circularity of the whole duct: 1 for a circle."),
 ]
+
+# Lesion metrics at matched lesion sizes: one row per metric, baseline and candidate side by side for each size
+function lesion_table(b, c)
+    all(ismissing(b["IC_$n"]) && ismissing(c["IC_$n"]) for n in LESION_SIZES) && return "<p class=\"quiet\">No lesion reached $(LESION_SIZES[1]) cells before a breach.</p>"
+    io = IOBuffer()
+    print(io, "<h3>Lesion metrics at matched lesion size</h3><p class=\"quiet\">At the first frame the lesion reaches each size; — = not reached before the first breach.</p>",
+          "<table><tr><th rowspan=\"2\">Metric</th>", join("<th colspan=\"2\">$n lesion cells</th>" for n in LESION_SIZES), "</tr><tr>",
+          join("<th>baseline</th><th>candidate</th>" for _ in LESION_SIZES), "</tr>")
+    for k in LESION_METRICS
+        print(io, "<tr><td>$k</td>", join("<td>$(fmt(b["$(k)_$n"]))</td><td>$(fmt(c["$(k)_$n"]))</td>" for n in LESION_SIZES), "</tr>")
+    end
+    print(io, "</table>")
+    return String(take!(io))
+end
 
 const CSS = """
 :root { --ink:#1d1d1f; --quiet:#6e6e73; --rule:#e5e5ea; --bg:#ffffff; --panel:#f6f6f8; --base:#8e8e93; --cand:#2463eb;
@@ -211,6 +231,7 @@ function build_report(outdir)
         print(io, "<h2>$(html(e))</h2>")
         print(io, "<div class=\"rowlabel\">Baseline (sim $(sim_of(e, "baseline")))</div><div class=\"snaps\">", snapshot_row(sim_of(e, "baseline"), b_rows, b), "</div>")
         print(io, "<div class=\"rowlabel\">Candidate (sim $(sim_of(e, "candidate")))</div><div class=\"snaps\">", snapshot_row(sim_of(e, "candidate"), c_rows, c), "</div>")
+        print(io, lesion_table(b, c))
         print(io, "<p class=\"key quiet\"><span style=\"background:var(--base)\"></span>baseline<span style=\"background:var(--cand)\"></span>candidate · dashed line = first breach</p><div class=\"charts\">")
         for (title, unit, col, zero) in CHARTS
             print(io, chart(title, unit, b_rows, c_rows, col, b["first_breach"], c["first_breach"]; from_zero = zero))

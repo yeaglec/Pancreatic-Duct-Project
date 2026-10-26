@@ -10,23 +10,27 @@
 #               edge_stretch     largest edge length / its starting length; only while the node count is unchanged
 #               min_curv_radius  smallest radius of a circle through three membrane points CURV_SPAN apart (µm);
 #                                spikes show as radii far below a cell size, node jitter does not
-#   Metrics.jl  IC, indent, off_membrane (fraction), filling, plus cell and off-membrane counts
+#   Metrics     lesion metrics (IC, fold_depth, fold_aspect, layer_thickness, fold_share; see Metrics.jl) and
+#               cell, lesion-cell and off-membrane counts
 #   Order       disp_since_division  max distance of the membrane from where it was at the first division (µm;
 #                                    NaN before it), so startup settling doesn't count as a lesion fold
 #
 # Per simulation (summarize): first division, first fold, first second-layer cell, order of events, first breach
-# (first frame of >= BREACH_FRAMES consecutive frames with a cell outside), and the worst stretch / curvature
-# before the first breach. Startup effects are excluded from the order of events: the fold and the second layer
+# (first frame of >= BREACH_FRAMES consecutive frames with a cell outside), the worst stretch / curvature
+# before the first breach, and the lesion metrics at matched lesion sizes (<metric>_<size>). Startup effects are excluded from the order of events: the fold and the second layer
 # are both measured from the first division.
 # Between simulations (same_output): the regression check, i.e. are two runs identical?
 using DelimitedFiles
-include(joinpath(@__DIR__, "..", "Metrics.jl"))   # area, perimeter, distance_to_membrane, inside, the four metrics
+include(joinpath(@__DIR__, "..", "Metrics.jl"))   # geometry, inside, lesion_metrics
 
 const R_CELL = 8.4          # cell radius (µm): the fold threshold and the curvature span
 const ARC_EXCLUDE = 40.0    # µm along the membrane: closer pairs are neighbours, not opposite walls
 const CURV_SPAN = R_CELL    # µm along the membrane between the three points of the curvature circle
 const REACH = 10.0          # µm: membrane adhesion range, the off-membrane cutoff (as in the figures)
 const BREACH_FRAMES = 2     # consecutive frames with a cell outside before it counts as a breach (1 = strict)
+const LESION_TYPE = "CAF"   # cell definition of the neoplastic cells
+const LESION_SIZES = [5, 10, 20]   # lesion cell counts at which the metrics are compared (as in Metric_Testing)
+const LESION_METRICS = (:IC, :fold_depth, :fold_aspect, :layer_thickness, :fold_share)
 
 # ── Loading one saved frame ──
 output_dir(sim_id) = joinpath(PhysiCellModelManager.dataDir(), "outputs", "simulations", "$sim_id", "output")
@@ -34,7 +38,7 @@ load_membrane(sim_id, frame) = readdlm(joinpath(output_dir(sim_id), "boundary_t$
 function load_cells(sim_id, frame)
     c = PhysiCellSnapshot(sim_id, frame; include_cells = true).cells
     c = c[(.!c.dead) .& (c.cell_type_name .!= "BM"), :]
-    return c.position_1, c.position_2, c.radius
+    return c.position_1, c.position_2, c.radius, c.cell_type_name .== LESION_TYPE
 end
 n_frames(sim_id) = count(f -> startswith(f, "boundary_t") && endswith(f, ".csv"), readdir(output_dir(sim_id)))
 function save_interval(sim_id)   # minutes between full-data saves, read from the settings the simulation ran with
@@ -82,19 +86,18 @@ end
 # ── Per frame ──
 function frame_checks(sim_id, frame, m0)
     m = load_membrane(sim_id, frame)
-    x, y, r = load_cells(sim_id, frame)
+    x, y, r, lesion = load_cells(sim_id, frame)
     disp = [distance_to_membrane(m0, m[i, 1], m[i, 2]) for i in 1:size(m, 1)]
     off = off_membrane(m, x, y, r; reach = REACH)
     e, e0 = edge_lengths(m), edge_lengths(m0)
-    return (outside = count(k -> !inside(m, x[k], y[k]), eachindex(x)),
-            wall_gap = wall_gap(m), longest_edge = maximum(e),
-            disp_max = maximum(disp), disp_mean = sum(disp) / length(disp),
-            stretch = perimeter(m) / perimeter(m0),
-            edge_stretch = length(e) == length(e0) ? maximum(e ./ e0) : NaN,
-            min_curv_radius = min_curvature_radius(m),
-            IC = inverse_circularity(m), indent = max_indent_depth(m),
-            off_membrane = sum(off) / length(x), filling = lumen_filling(m, r),
-            cells = length(x), off_count = sum(off))
+    health = (outside = count(k -> !inside(m, x[k], y[k]), eachindex(x)),
+              wall_gap = wall_gap(m), longest_edge = maximum(e),
+              disp_max = maximum(disp), disp_mean = sum(disp) / length(disp),
+              stretch = perimeter(m) / perimeter(m0),
+              edge_stretch = length(e) == length(e0) ? maximum(e ./ e0) : NaN,
+              min_curv_radius = min_curvature_radius(m),
+              cells = length(x), lesion_cells = count(lesion), off_count = sum(off))
+    return merge(health, lesion_metrics(m, x, y, lesion))
 end
 
 # All frames of one simulation as a vector of NamedTuples (one per frame), with time in days
@@ -120,12 +123,16 @@ function summarize(rows)
     n = BREACH_FRAMES - 1
     breach = findfirst(k -> k + n <= length(rows) && all(r -> r.outside > 0, rows[k:k + n]), eachindex(rows))
     valid = breach === nothing ? rows : rows[1:breach - 1]   # frames before the first escape
-    return (first_division = k_div === nothing ? missing : rows[k_div].day,
+    # lesion metrics at the first frame reaching each lesion size (missing if not reached before the breach)
+    at(n) = (j = findfirst(r -> r.lesion_cells >= n, valid); j === nothing ? nothing : valid[j])
+    names = Tuple(Symbol(k, "_", n) for n in LESION_SIZES for k in LESION_METRICS)
+    sized = NamedTuple{names}(Tuple(at(n) === nothing ? missing : at(n)[k] for n in LESION_SIZES for k in LESION_METRICS))
+    return merge((first_division = k_div === nothing ? missing : rows[k_div].day,
             first_fold = fold, first_second_layer = second,
             fold_first = k_div === nothing ? missing : ismissing(second) ? true : (!ismissing(fold) && fold <= second),
             first_breach = breach === nothing ? missing : rows[breach].day,
             max_stretch = maximum(r -> r.stretch, valid), max_edge_stretch = maximum(r -> r.edge_stretch, valid),
-            min_curv_radius = minimum(r -> r.min_curv_radius, valid), max_disp = maximum(r -> r.disp_max, valid))
+            min_curv_radius = minimum(r -> r.min_curv_radius, valid), max_disp = maximum(r -> r.disp_max, valid)), sized)
 end
 
 # ── Regression: are two simulations identical? ──

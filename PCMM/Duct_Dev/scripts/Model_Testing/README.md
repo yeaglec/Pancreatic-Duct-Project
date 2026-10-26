@@ -238,7 +238,10 @@ julia --project=. -e 'using PhysiCellModelManager; initializeModelManager("..");
 2. **Summary table**: one row pair per experiment. Green / red = candidate better / worse.
 3. **Identical to baseline?**: only when the candidate sets `check_identical = true`.
 4. **Snapshots**: baseline above candidate at matching moments. A red border means the frame is after a breach.
-5. **Charts**: baseline (grey) and candidate (blue) on the same axes. Dashed lines mark each run's first breach.
+5. **Lesion metrics at matched lesion size**: each metric when the lesion first reaches 5, 10 and 20 cells, before
+   any breach. This is the quantitative comparison; it uses lesion size, not time, as on a slide.
+6. **Charts**: baseline (grey) and candidate (blue) on the same axes. Dashed lines mark each run's first breach;
+   values after it include escaped cells and are not meaningful.
 
 ## What the checks measure
 
@@ -252,9 +255,10 @@ All computed from saved outputs only (membrane file + cell positions). Per frame
 | Stretch | Perimeter, and largest edge, relative to the start | Large: the BM should bend, not stretch |
 | Curvature radius | Smallest radius of a circle through 3 membrane points 8.4 µm apart | Far below a cell size: spikes |
 | Order of events *(per sim)* | Does the membrane fold (moves ≥ 8.4 µm since the first division) before a second-layer cell appears? | Fold first = no |
-| Metrics.jl numbers | Inverse circularity, max indent depth, off-membrane fraction, lumen filling | Context, not pass/fail |
+| Lesion metrics | IC, fold depth, fold aspect, layer thickness, fold share ([definitions](../Metric_Testing/README.md)) | Context, not pass/fail |
 
-Thresholds are constants at the top of `checks.jl` (`R_CELL`, `ARC_EXCLUDE`, `CURV_SPAN`, `REACH`, `BREACH_FRAMES`).
+Thresholds are constants at the top of `checks.jl` (`R_CELL`, `ARC_EXCLUDE`, `CURV_SPAN`, `REACH`, `BREACH_FRAMES`,
+`LESION_SIZES`).
 
 ## Settings
 
